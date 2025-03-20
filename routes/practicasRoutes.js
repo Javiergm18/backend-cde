@@ -2,17 +2,6 @@ const express = require("express");
 const router = express.Router();
 const Practica = require("../models/Practica");
 
-// Crear una práctica
-router.post("/", async (req, res) => {
-    try {
-        const nuevaPractica = new Practica(req.body);
-        await nuevaPractica.save();
-        res.status(201).json(nuevaPractica);
-    } catch (error) {
-        res.status(500).json({ message: "Error al registrar práctica", error });
-    }
-});
-
 // Obtener todas las prácticas
 router.get("/", async (req, res) => {
     try {
@@ -34,6 +23,17 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+// Crear una práctica
+router.post("/", async (req, res) => {
+    try {
+        const nuevaPractica = new Practica(req.body);
+        await nuevaPractica.save();
+        res.status(201).json(nuevaPractica);
+    } catch (error) {
+        res.status(500).json({ message: "Error al registrar práctica", error });
+    }
+});
+
 // Actualizar una práctica
 router.put("/:id", async (req, res) => {
     try {
@@ -50,7 +50,7 @@ router.delete("/:id", async (req, res) => {
     try {
         const practicaEliminada = await Practica.findByIdAndDelete(req.params.id);
         if (!practicaEliminada) return res.status(404).json({ message: "Práctica no encontrada" });
-        res.json({ message: "Práctica eliminada correctamente" });
+        res.json({ message: " Práctica eliminada correctamente" });
     } catch (error) {
         res.status(500).json({ message: "Error al eliminar práctica", error });
     }

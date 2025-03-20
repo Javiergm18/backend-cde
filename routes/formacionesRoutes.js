@@ -2,17 +2,6 @@ const express = require("express");
 const router = express.Router();
 const Formacion = require("../models/Formacion");
 
-// Crear una formación
-router.post("/", async (req, res) => {
-    try {
-        const nuevaFormacion = new Formacion(req.body);
-        await nuevaFormacion.save();
-        res.status(201).json(nuevaFormacion);
-    } catch (error) {
-        res.status(500).json({ message: "Error al registrar formación", error });
-    }
-});
-
 // Obtener todas las formaciones
 router.get("/", async (req, res) => {
     try {
@@ -34,6 +23,17 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+// Crear una formación
+router.post("/", async (req, res) => {
+    try {
+        const nuevaFormacion = new Formacion(req.body);
+        await nuevaFormacion.save();
+        res.status(201).json(nuevaFormacion);
+    } catch (error) {
+        res.status(500).json({ message: "Error al registrar formación", error });
+    }
+});
+
 // Actualizar una formación
 router.put("/:id", async (req, res) => {
     try {
@@ -50,7 +50,7 @@ router.delete("/:id", async (req, res) => {
     try {
         const formacionEliminada = await Formacion.findByIdAndDelete(req.params.id);
         if (!formacionEliminada) return res.status(404).json({ message: "Formación no encontrada" });
-        res.json({ message: "Formación eliminada correctamente" });
+        res.json({ message: " Formación eliminada correctamente" });
     } catch (error) {
         res.status(500).json({ message: "Error al eliminar formación", error });
     }
