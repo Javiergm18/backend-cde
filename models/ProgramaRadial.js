@@ -1,16 +1,17 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const ProgramaRadialSchema = new mongoose.Schema({
-    fechaEntrevista: { type: Date, required: true },
-    medioTransmision: { type: String, required: true },
-    entrevistador: { type: String, required: true },
-    entrevistado: {
-        nombre: String,
-        cargo: String,
-        empresa: String,
-        telefono: String,
-        email: String
-    }
-});
+const programaRadialSchema = new mongoose.Schema({
+    fechaEntrevista: Date,
+    horaEntrevista: String,
+    medioTransmision: String, // Pregrado (Teams) o emisora
+    nombreEntrevistador: String,
+    nombreEntrevistado: String,
+    tipoEntrevistado: String, // Alumno, empresario, egresado, particular
+    cargo: String,
+    nombreEmpresa: String, // Si aplica
+    telefonoContacto: String,
+    correoElectronico: String,
+    generacionDatosEstadisticos: Object // Para análisis y reportes
+}, { collection: 'ProgramaRadial' });
 
-module.exports = mongoose.model("ProgramaRadial", ProgramaRadialSchema);
+module.exports = mongoose.model('ProgramaRadial', programaRadialSchema);

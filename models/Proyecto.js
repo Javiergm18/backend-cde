@@ -1,20 +1,25 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const ProyectoSchema = new mongoose.Schema({
-    nombre: { type: String, required: true },
-    entidadOrganizadora: { type: String, required: true },
-    fechaApertura: { type: Date, required: true },
-    fechaCierre: { type: Date, required: true },
-    objetivo: { type: String, required: true },
-    publicoObjetivo: { type: String, required: true },
-    estado: { type: String, required: true, enum: ["Abierta", "En evaluación", "Cerrada", "En ejecución"] },
+const proyectoSchema = new mongoose.Schema({
+    nombreProyecto: String,
+    entidadOrganizadora: String,
+    fechaApertura: Date,
+    fechaCierre: Date,
+    objetivo: String,
+    publicoObjetivo: String,
+    estado: { type: String, enum: ['Abierta', 'En Evaluación', 'Cerrada', 'En Ejecución'] },
     enlaceInscripcion: String,
+    seguimiento: {
+        numeroPostulantes: Number,
+        beneficiariosSeleccionados: Number
+    },
     contactoReferencia: {
         nombre: String,
-        telefono: String,
-        email: String
+        correo: String,
+        telefono: String
     },
-    evidencias: { type: [String], default: [] }
-});
+    evidenciasDocumentos: [String], // Enlaces a documentos clave
+    generacionDatosEstadisticos: Object // Para análisis y reportes
+}, { collection: 'Proyectos' });
 
-module.exports = mongoose.model("Proyecto", ProyectoSchema);
+module.exports = mongoose.model('Proyecto', proyectoSchema);
