@@ -21,7 +21,9 @@ const formacionContinuaRoutes = require('./routes/formacionContinua');
 const practicasEmprendimientoRoutes = require('./routes/practicasEmprendimiento');
 const programaRadialRoutes = require('./routes/programaRadial');
 const proyectosRoutes = require('./routes/proyectos');
+const loginRoutes = require('./routes/login');
 
+app.use('/api/login', loginRoutes);
 app.use('/api/emprendedores', emprendedoresRoutes);
 app.use('/api/empresas', empresasRoutes);
 app.use('/api/eventosCharlas', eventosCharlasRoutes);
