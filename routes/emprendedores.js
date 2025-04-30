@@ -56,4 +56,17 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+router.get('/buscar/:nombres', async (req, res) => {
+    try {
+        const nombres = req.params.nombre;
+        const emprendedores = await Emprendedor.find({
+            nombres: { $regex: new RegExp(nombres, 'i') }
+        });
+        res.status(200).json(emprendedores);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
 module.exports = router;
