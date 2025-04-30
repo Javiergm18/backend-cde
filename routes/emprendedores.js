@@ -56,7 +56,7 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-router.get('/buscar/:nombres', async (req, res) => {
+router.get('/:nombres', async (req, res) => {
     try {
         const nombres = req.params.nombres;
         const emprendedor = await Emprendedor.find({
