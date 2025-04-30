@@ -61,7 +61,9 @@ router.get('/buscar/:nombres', async (req, res) => {
         const nombres = req.params.nombre;
         const emprendedores = await Emprendedor.find({
             nombres: { $regex: new RegExp(nombres, 'i') }
+        
         });
+        if (!emprendedor) return res.status(404).json({ message: 'Emprendedor no encontrado' });
         res.status(200).json(emprendedores);
     } catch (err) {
         res.status(500).json({ message: err.message });
