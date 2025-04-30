@@ -39,7 +39,7 @@ router.put('/:id', async (req, res) => {
     try {
         const proyecto = await Proyecto.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!proyecto) return res.status(404).json({ message: 'Proyecto no encontrado para actualizar' });
-        res.status(200).json({ message: 'Proyecto actualizado exitosamente', proyecto });
+        res.status(200).json({ message: 'Proyecto actualizado exitosamente'});
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
