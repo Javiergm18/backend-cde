@@ -58,7 +58,7 @@ router.delete('/:id', async (req, res) => {
 
 router.get('/buscar/:nombres', async (req, res) => {
     try {
-        const nombres = req.params.nombre;
+        const nombres = req.params.nombres;
         const emprendedor = await Emprendedor.find({
             nombres: { $regex: new RegExp(nombres, 'i') }
         
