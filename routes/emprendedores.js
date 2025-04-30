@@ -64,7 +64,7 @@ router.get('/buscar/:nombres', async (req, res) => {
         
         });
         if (!emprendedor) return res.status(404).json({ message: 'Emprendedor no encontrado' });
-        res.status(200).json(emprendedores);
+        res.status(200).json(emprendedor);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
