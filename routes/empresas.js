@@ -34,6 +34,19 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// Buscar emprendedores por nombre
+router.get('/buscar/:nombre', async (req, res) => {
+    try {
+        const empresa = await Empresa.find({
+            nombre: { $regex: req.params.nombre, $options: 'i' }
+        });
+        res.status(200).json(empresa);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
 // Actualizar una empresa
 router.put('/:id', async (req, res) => {
     try {

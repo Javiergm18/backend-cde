@@ -34,6 +34,18 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// Buscar emprendedores por nombreCurso
+router.get('/buscar/:nombreCurso', async (req, res) => {
+    try {
+        const curso = await FormacionContinua.find({
+            nombreCurso: { $regex: req.params.nombreCurso, $options: 'i' }
+        });
+        res.status(200).json(curso);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Actualizar un curso, seminario o taller
 router.put('/:id', async (req, res) => {
     try {

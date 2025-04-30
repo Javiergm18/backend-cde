@@ -34,6 +34,17 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+router.get('/buscar/:nombreEntrevistado', async (req, res) => {
+    try {
+        const entrevista = await ProgramaRadial.find({
+            nombreEntrevistado: { $regex: req.params.nombreEntrevistado, $options: 'i' }
+        });
+        res.status(200).json(entrevista);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Actualizar una entrevista del programa radial
 router.put('/:id', async (req, res) => {
     try {

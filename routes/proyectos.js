@@ -34,6 +34,17 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+router.get('/buscar/:nombreProyecto', async (req, res) => {
+    try {
+        const proyecto = await Proyecto.find({
+            nombreProyecto: { $regex: req.params.nombreProyecto, $options: 'i' }
+        });
+        res.status(200).json(proyecto);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Actualizar un proyecto o convocatoria
 router.put('/:id', async (req, res) => {
     try {

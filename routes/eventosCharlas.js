@@ -34,6 +34,19 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// Buscar emprendedores por tema
+router.get('/buscar/:tema', async (req, res) => {
+    try {
+        const eventoCharla = await EventoCharla.find({
+            tema: { $regex: req.params.tema, $options: 'i' }
+        });
+        res.status(200).json(eventoCharla);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
 // Actualizar un evento o charla
 router.put('/:id', async (req, res) => {
     try {
