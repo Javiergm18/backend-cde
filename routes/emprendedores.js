@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Emprendedor = require('../models/Emprendedores');
+const verificarToken = require('../middleware/authMiddleware');
 
 // Crear un nuevo emprendedor
-router.post('/', async (req, res) => {
+router.post('/',verificarToken, async (req, res) => {
     const nuevoEmprendedor = new Emprendedor(req.body);
     try {
         await nuevoEmprendedor.save();
@@ -14,7 +15,7 @@ router.post('/', async (req, res) => {
 });
 
 // Obtener todos los emprendedores
-router.get('/', async (req, res) => {
+router.get('/',verificarToken, async (req, res) => {
     try {
         const emprendedores = await Emprendedor.find();
         res.status(200).json(emprendedores);
@@ -24,7 +25,7 @@ router.get('/', async (req, res) => {
 });
 
 // Obtener un emprendedor por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id',verificarToken, async (req, res) => {
     try {
         const emprendedor = await Emprendedor.findById(req.params.id);
         if (!emprendedor) return res.status(404).json({ message: 'Emprendedor no encontrado' });
@@ -35,7 +36,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Actualizar un emprendedor
-router.put('/:id', async (req, res) => {
+router.put('/:id',verificarToken, async (req, res) => {
     try {
         const emprendedor = await Emprendedor.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!emprendedor) return res.status(404).json({ message: 'Emprendedor no encontrado' });
@@ -46,7 +47,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Eliminar un emprendedor
-router.delete('/:id', async (req, res) => {
+router.delete('/:id',verificarToken, async (req, res) => {
     try {
         const emprendedor = await Emprendedor.findByIdAndDelete(req.params.id);
         if (!emprendedor) return res.status(404).json({ message: 'Emprendedor no encontrado' });
@@ -57,7 +58,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Buscar emprendedores por nombre
-router.get('/buscar/:nombres', async (req, res) => {
+router.get('/buscar/:nombres',verificarToken, async (req, res) => {
     try {
         const emprendedor = await Emprendedor.find({
             nombres: { $regex: req.params.nombres, $options: 'i' }
