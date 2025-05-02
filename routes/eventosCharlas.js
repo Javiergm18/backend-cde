@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const EventoCharla = require('../models/EventosCharlas');
+const verificarToken = require('../middleware/authMiddleware');
 
 // Crear un nuevo evento o charla
-router.post('/', async (req, res) => {
+router.post('/',verificarToken, async (req, res) => {
     const nuevoEventoCharla = new EventoCharla(req.body);
     try {
         await nuevoEventoCharla.save();
@@ -14,7 +15,7 @@ router.post('/', async (req, res) => {
 });
 
 // Obtener todos los eventos y charlas
-router.get('/', async (req, res) => {
+router.get('/',verificarToken, async (req, res) => {
     try {
         const eventosCharlas = await EventoCharla.find();
         res.status(200).json(eventosCharlas);
@@ -24,7 +25,7 @@ router.get('/', async (req, res) => {
 });
 
 // Obtener un evento o charla por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id',verificarToken, async (req, res) => {
     try {
         const eventoCharla = await EventoCharla.findById(req.params.id);
         if (!eventoCharla) return res.status(404).json({ message: 'Evento o charla no encontrada' });
@@ -35,7 +36,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Buscar emprendedores por tema
-router.get('/buscar/:tema', async (req, res) => {
+router.get('/buscar/:tema',verificarToken, async (req, res) => {
     try {
         const eventoCharla = await EventoCharla.find({
             tema: { $regex: req.params.tema, $options: 'i' }
@@ -48,7 +49,7 @@ router.get('/buscar/:tema', async (req, res) => {
 
 
 // Actualizar un evento o charla
-router.put('/:id', async (req, res) => {
+router.put('/:id',verificarToken, async (req, res) => {
     try {
         const eventoCharla = await EventoCharla.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!eventoCharla) return res.status(404).json({ message: 'Evento o charla no encontrada' });
@@ -59,7 +60,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Eliminar un evento o charla
-router.delete('/:id', async (req, res) => {
+router.delete('/:id',verificarToken, async (req, res) => {
     try {
         const eventoCharla = await EventoCharla.findByIdAndDelete(req.params.id);
         if (!eventoCharla) return res.status(404).json({ message: 'Evento o charla no encontrada' });

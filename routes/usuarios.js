@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const router = express.Router();
 const Usuario = require('../models/Usuario'); 
 
+
 // Crear usuario con contraseña cifrada (sólo para uso interno)
 router.post('/', async (req, res) => {
     try {

@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const PracticasEmprendimiento = require('../models/PracticasEmprendimiento');
+const verificarToken = require('../middleware/authMiddleware');
 
 // Crear una nueva práctica de emprendimiento
-router.post('/', async (req, res) => {
+router.post('/',verificarToken, async (req, res) => {
     const nuevaPractica = new PracticasEmprendimiento(req.body);
     try {
         await nuevaPractica.save();
@@ -14,7 +15,7 @@ router.post('/', async (req, res) => {
 });
 
 // Obtener todas las prácticas de emprendimiento
-router.get('/', async (req, res) => {
+router.get('/',verificarToken, async (req, res) => {
     try {
         const practicas = await PracticasEmprendimiento.find();
         res.status(200).json(practicas);
@@ -24,7 +25,7 @@ router.get('/', async (req, res) => {
 });
 
 // Obtener una práctica de emprendimiento por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id',verificarToken, async (req, res) => {
     try {
         const practica = await PracticasEmprendimiento.findById(req.params.id);
         if (!practica) return res.status(404).json({ message: 'Práctica no encontrada' });
@@ -34,7 +35,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.get('/buscar/:nombreEstudiante', async (req, res) => {
+router.get('/buscar/:nombreEstudiante',verificarToken, async (req, res) => {
     try {
         const practica = await PracticasEmprendimiento.find({
             nombreEstudiante: { $regex: req.params.nombreEstudiante, $options: 'i' }
@@ -46,7 +47,7 @@ router.get('/buscar/:nombreEstudiante', async (req, res) => {
 });
 
 // Actualizar una práctica de emprendimiento
-router.put('/:id', async (req, res) => {
+router.put('/:id',verificarToken, async (req, res) => {
     try {
         const practica = await PracticasEmprendimiento.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!practica) return res.status(404).json({ message: 'Práctica no encontrada' });
@@ -57,7 +58,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Eliminar una práctica de emprendimiento
-router.delete('/:id', async (req, res) => {
+router.delete('/:id',verificarToken, async (req, res) => {
     try {
         const practica = await PracticasEmprendimiento.findByIdAndDelete(req.params.id);
         if (!practica) return res.status(404).json({ message: 'Práctica no encontrada' });

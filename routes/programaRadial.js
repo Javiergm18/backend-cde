@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const ProgramaRadial = require('../models/ProgramaRadial');
+const verificarToken = require('../middleware/authMiddleware');
 
 // Crear una nueva entrevista en el programa radial
-router.post('/', async (req, res) => {
+router.post('/',verificarToken, async (req, res) => {
     const nuevaEntrevista = new ProgramaRadial(req.body);
     try {
         await nuevaEntrevista.save();
@@ -14,7 +15,7 @@ router.post('/', async (req, res) => {
 });
 
 // Obtener todas las entrevistas del programa radial
-router.get('/', async (req, res) => {
+router.get('/',verificarToken, async (req, res) => {
     try {
         const entrevistas = await ProgramaRadial.find();
         res.status(200).json(entrevistas);
@@ -24,7 +25,7 @@ router.get('/', async (req, res) => {
 });
 
 // Obtener una entrevista del programa radial por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id',verificarToken, async (req, res) => {
     try {
         const entrevista = await ProgramaRadial.findById(req.params.id);
         if (!entrevista) return res.status(404).json({ message: 'Entrevista no encontrada' });
@@ -34,7 +35,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.get('/buscar/:nombreEntrevistado', async (req, res) => {
+router.get('/buscar/:nombreEntrevistado',verificarToken, async (req, res) => {
     try {
         const entrevista = await ProgramaRadial.find({
             nombreEntrevistado: { $regex: req.params.nombreEntrevistado, $options: 'i' }
@@ -46,7 +47,7 @@ router.get('/buscar/:nombreEntrevistado', async (req, res) => {
 });
 
 // Actualizar una entrevista del programa radial
-router.put('/:id', async (req, res) => {
+router.put('/:id',verificarToken, async (req, res) => {
     try {
         const entrevista = await ProgramaRadial.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!entrevista) return res.status(404).json({ message: 'Entrevista no encontrada' });
@@ -57,7 +58,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Eliminar una entrevista del programa radial
-router.delete('/:id', async (req, res) => {
+router.delete('/:id',verificarToken, async (req, res) => {
     try {
         const entrevista = await ProgramaRadial.findByIdAndDelete(req.params.id);
         if (!entrevista) return res.status(404).json({ message: 'Entrevista no encontrada' });

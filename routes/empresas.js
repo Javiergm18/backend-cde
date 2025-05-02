@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Empresa = require('../models/Empresas');
+const verificarToken = require('../middleware/authMiddleware');
 
 // Crear una nueva empresa
-router.post('/', async (req, res) => {
+router.post('/',verificarToken, async (req, res) => {
     const nuevaEmpresa = new Empresa(req.body);
     try {
         await nuevaEmpresa.save();
@@ -14,7 +15,7 @@ router.post('/', async (req, res) => {
 });
 
 // Obtener todas las empresas
-router.get('/', async (req, res) => {
+router.get('/',verificarToken, async (req, res) => {
     try {
         const empresas = await Empresa.find();
         res.status(200).json(empresas);
@@ -24,7 +25,7 @@ router.get('/', async (req, res) => {
 });
 
 // Obtener una empresa por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id',verificarToken, async (req, res) => {
     try {
         const empresa = await Empresa.findById(req.params.id);
         if (!empresa) return res.status(404).json({ message: 'Empresa no encontrada' });
@@ -35,7 +36,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Buscar emprendedores por nombre
-router.get('/buscar/:nombre', async (req, res) => {
+router.get('/buscar/:nombre',verificarToken, async (req, res) => {
     try {
         const empresa = await Empresa.find({
             nombre: { $regex: req.params.nombre, $options: 'i' }
@@ -48,7 +49,7 @@ router.get('/buscar/:nombre', async (req, res) => {
 
 
 // Actualizar una empresa
-router.put('/:id', async (req, res) => {
+router.put('/:id',verificarToken, async (req, res) => {
     try {
         const empresa = await Empresa.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!empresa) return res.status(404).json({ message: 'Empresa no encontrada' });
@@ -59,7 +60,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Eliminar una empresa
-router.delete('/:id', async (req, res) => {
+router.delete('/:id',verificarToken, async (req, res) => {
     try {
         const empresa = await Empresa.findByIdAndDelete(req.params.id);
         if (!empresa) return res.status(404).json({ message: 'Empresa no encontrada' });

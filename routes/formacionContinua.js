@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const FormacionContinua = require('../models/FormacionContinua');
+const verificarToken = require('../middleware/authMiddleware');
 
 // Crear un nuevo curso, seminario o taller
-router.post('/', async (req, res) => {
+router.post('/',verificarToken, async (req, res) => {
     const nuevoCurso = new FormacionContinua(req.body);
     try {
         await nuevoCurso.save();
@@ -14,7 +15,7 @@ router.post('/', async (req, res) => {
 });
 
 // Obtener todos los cursos, seminarios o talleres
-router.get('/', async (req, res) => {
+router.get('/',verificarToken, async (req, res) => {
     try {
         const cursos = await FormacionContinua.find();
         res.status(200).json(cursos);
@@ -24,7 +25,7 @@ router.get('/', async (req, res) => {
 });
 
 // Obtener un curso, seminario o taller por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id',verificarToken, async (req, res) => {
     try {
         const curso = await FormacionContinua.findById(req.params.id);
         if (!curso) return res.status(404).json({ message: 'Curso no encontrado' });
@@ -35,7 +36,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Buscar emprendedores por nombreCurso
-router.get('/buscar/:nombreCurso', async (req, res) => {
+router.get('/buscar/:nombreCurso',verificarToken, async (req, res) => {
     try {
         const curso = await FormacionContinua.find({
             nombreCurso: { $regex: req.params.nombreCurso, $options: 'i' }
@@ -47,7 +48,7 @@ router.get('/buscar/:nombreCurso', async (req, res) => {
 });
 
 // Actualizar un curso, seminario o taller
-router.put('/:id', async (req, res) => {
+router.put('/:id',verificarToken, async (req, res) => {
     try {
         const curso = await FormacionContinua.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!curso) return res.status(404).json({ message: 'Curso no encontrado' });
@@ -58,7 +59,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Eliminar un curso, seminario o taller
-router.delete('/:id', async (req, res) => {
+router.delete('/:id',verificarToken, async (req, res) => {
     try {
         const curso = await FormacionContinua.findByIdAndDelete(req.params.id);
         if (!curso) return res.status(404).json({ message: 'Curso no encontrado' });

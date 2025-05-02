@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Proyecto = require('../models/Proyecto');
+const verificarToken = require('../middleware/authMiddleware');
 
 // Crear un nuevo proyecto o convocatoria
-router.post('/', async (req, res) => {
+router.post('/',verificarToken, async (req, res) => {
     const nuevoProyecto = new Proyecto(req.body);
     try {
         const proyecto = await nuevoProyecto.save();
@@ -14,7 +15,7 @@ router.post('/', async (req, res) => {
 });
 
 // Obtener todos los proyectos y convocatorias
-router.get('/', async (req, res) => {
+router.get('/',verificarToken, async (req, res) => {
     try {
         const proyectos = await Proyecto.find();
         res.status(200).json(proyectos);
@@ -24,7 +25,7 @@ router.get('/', async (req, res) => {
 });
 
 // Obtener un proyecto o convocatoria por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id',verificarToken, async (req, res) => {
     try {
         const proyecto = await Proyecto.findById(req.params.id);
         if (!proyecto) return res.status(404).json({ message: 'Proyecto no encontrado' });
@@ -34,7 +35,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.get('/buscar/:nombreProyecto', async (req, res) => {
+router.get('/buscar/:nombreProyecto',verificarToken, async (req, res) => {
     try {
         const proyecto = await Proyecto.find({
             nombreProyecto: { $regex: req.params.nombreProyecto, $options: 'i' }
@@ -46,7 +47,7 @@ router.get('/buscar/:nombreProyecto', async (req, res) => {
 });
 
 // Actualizar un proyecto o convocatoria
-router.put('/:id', async (req, res) => {
+router.put('/:id',verificarToken, async (req, res) => {
     try {
         const proyecto = await Proyecto.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!proyecto) return res.status(404).json({ message: 'Proyecto no encontrado para actualizar' });
@@ -57,7 +58,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Eliminar un proyecto o convocatoria
-router.delete('/:id', async (req, res) => {
+router.delete('/:id',verificarToken, async (req, res) => {
     try {
         const proyecto = await Proyecto.findByIdAndDelete(req.params.id);
         if (!proyecto) return res.status(404).json({ message: 'Proyecto no encontrado para eliminar' });
