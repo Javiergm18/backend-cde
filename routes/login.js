@@ -26,7 +26,7 @@ router.post('/', async (req, res) => {
 
         // Si la contraseña es válida, generamos el token JWT
         const token = jwt.sign({ id: usuario._id, correo: usuario.correo }, JWT_SECRET, {
-            expiresIn: '12h' // el token expira en 1 hora
+            expiresIn: '8h' // el token expira en 
         });
 
         res.status(200).json({ message: 'Inicio de sesión exitoso', token });
