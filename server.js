@@ -23,7 +23,7 @@ const practicasEmprendimientoRoutes = require('./routes/practicasEmprendimiento'
 const programaRadialRoutes = require('./routes/programaRadial');
 const proyectosRoutes = require('./routes/proyectos');
 const loginRoutes = require('./routes/login');
-const usuariosRoutes = require('./routes/usuarios');
+//const usuariosRoutes = require('./routes/usuarios');
 
 app.use('/api/login', loginRoutes);
 app.use('/api/emprendedores', emprendedoresRoutes);
@@ -33,7 +33,7 @@ app.use('/api/formacionContinua', formacionContinuaRoutes);
 app.use('/api/practicasEmprendimiento', practicasEmprendimientoRoutes);
 app.use('/api/programaRadial', programaRadialRoutes);
 app.use('/api/proyectos', proyectosRoutes);
-app.use('/api/usuarios', usuariosRoutes);
+//app.use('/api/usuarios', usuariosRoutes);
 
 // Puerto
 const PORT = process.env.PORT || 5000;
