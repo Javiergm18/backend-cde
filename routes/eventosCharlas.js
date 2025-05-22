@@ -4,9 +4,16 @@ const EventoCharla = require('../models/EventosCharlas');
 const verificarToken = require('../middleware/authMiddleware');
 
 // Crear un nuevo evento o charla
-router.post('/',verificarToken, async (req, res) => {
-    const nuevoEventoCharla = new EventoCharla(req.body);
+router.post('/', verificarToken, async (req, res) => {
     try {
+        // Agregar el prefijo a cada imagen si no lo tiene
+        if (req.body.evidenciasFotograficas && Array.isArray(req.body.evidenciasFotograficas)) {
+            req.body.evidenciasFotograficas = req.body.evidenciasFotograficas.map(img => {
+                return img.startsWith('data:image') ? img : 'data:image/png;base64,' + img;
+            });
+        }
+
+        const nuevoEventoCharla = new EventoCharla(req.body);
         await nuevoEventoCharla.save();
         res.status(201).json({ message: 'Evento o charla creada exitosamente' });
     } catch (err) {
