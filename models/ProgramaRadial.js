@@ -6,6 +6,7 @@ const programaRadialSchema = new mongoose.Schema({
     medioTransmision: String, // Pregrado (Teams) o emisora
     nombreEntrevistador: String,
     nombreEntrevistado: String,
+    carreraEntrevistado: String,
     tipoEntrevistado: String, // Alumno, empresario, egresado, particular
     cargo: String,
     nombreEmpresa: String, // Si aplica
