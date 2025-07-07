@@ -6,10 +6,7 @@ const eventoCharlaSchema = new mongoose.Schema({
     tipoActividad: String, // charla, taller, evento, brigada
     tema: String,
     nombreConferencista: String,
-    datosContactoConferencista: {
-        telefono: String,
-        correoElectronico: String
-    },
+    publicoObjetivo: String,
     numeroAsistentes: Number,
     horaInicio: String,
     duracion: Number, // en horas
