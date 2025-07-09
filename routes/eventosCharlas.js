@@ -6,10 +6,15 @@ const verificarToken = require('../middleware/authMiddleware');
 // Crear un nuevo evento o charla
 router.post('/', verificarToken, async (req, res) => {
     try {
-        // Agregar el prefijo a cada imagen si no lo tiene
+        // Prefijar base64 si no lo tiene
         if (req.body.evidenciasFotograficas && Array.isArray(req.body.evidenciasFotograficas)) {
-            req.body.evidenciasFotograficas = req.body.evidenciasFotograficas.map(img => {
-                return img.startsWith('data:image') ? img : 'data:image/png;base64,' + img;
+            req.body.evidenciasFotograficas = req.body.evidenciasFotograficas.map(media => {
+                if (media.startsWith('data:image') || media.startsWith('data:video')) {
+                    return media; // ya tiene prefijo correcto
+                } else {
+                    // Por defecto suponer imagen PNG
+                    return 'data:image/png;base64,' + media;
+                }
             });
         }
 
@@ -20,6 +25,7 @@ router.post('/', verificarToken, async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 // Obtener todos los eventos y charlas
 router.get('/',verificarToken, async (req, res) => {
