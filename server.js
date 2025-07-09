@@ -7,8 +7,8 @@ require('dotenv').config();
 
 
 const app = express();
-app.use(bodyParser.json({ limit: '20mb' }));
-app.use(bodyParser.urlencoded({ limit: '20mb', extended: true }));
+app.use(bodyParser.json({ limit: '25mb' }));
+app.use(bodyParser.urlencoded({ limit: '25mb', extended: true }));
 
 
 // Conexión a la base de datos MongoDB
