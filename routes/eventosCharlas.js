@@ -9,12 +9,20 @@ router.post('/', verificarToken, async (req, res) => {
         // Prefijar base64 si no lo tiene
         if (req.body.evidenciasFotograficas && Array.isArray(req.body.evidenciasFotograficas)) {
             req.body.evidenciasFotograficas = req.body.evidenciasFotograficas.map(media => {
-                if (media.startsWith('data:image') || media.startsWith('data:video')) {
-                    return media; // ya tiene prefijo correcto
-                } else {
-                    // Por defecto suponer imagen PNG
-                    return 'data:image/png;base64,' + media;
+                // Asegura que sea un objeto con los campos esperados
+                let { nombre, tipo, contenido, esVideo } = media;
+
+                // Agrega el prefijo si no está presente
+                if (!contenido.startsWith('data:')) {
+                    contenido = `${tipo};base64,${contenido}`;
                 }
+
+                return {
+                    nombre: nombre || 'archivo',
+                    tipo: tipo || 'data:image/png',
+                    contenido,
+                    esVideo: esVideo || 'false'
+                };
             });
         }
 
@@ -25,6 +33,7 @@ router.post('/', verificarToken, async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 
 // Obtener todos los eventos y charlas
