@@ -4,6 +4,7 @@ const Proyecto = require('../models/Proyecto');
 const verificarToken = require('../middleware/authMiddleware');
 
 // Crear un nuevo proyecto o convocatoria
+/*
 router.post('/',verificarToken, async (req, res) => {
     const nuevoProyecto = new Proyecto(req.body);
     try {
@@ -13,6 +14,35 @@ router.post('/',verificarToken, async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+*/
+router.post('/', verificarToken, async (req, res) => {
+    try {
+        // Procesar evidencias fotográficas (imágenes/videos)
+        if (req.body.evidenciasFotograficas && Array.isArray(req.body.evidenciasFotograficas)) {
+            req.body.evidenciasFotograficas = req.body.evidenciasFotograficas.map(item => {
+                return item.startsWith('data:image') || item.startsWith('data:video')
+                    ? item
+                    : 'data:image/png;base64,' + item;
+            });
+        }
+
+        // Procesar evidencias documentales (PDF, DOCX, etc.)
+        if (req.body.evidenciasDocumentos && Array.isArray(req.body.evidenciasDocumentos)) {
+            req.body.evidenciasDocumentos = req.body.evidenciasDocumentos.map(item => {
+                return item.startsWith('data:application')
+                    ? item
+                    : 'data:application/pdf;base64,' + item;
+            });
+        }
+
+        const nuevoProyecto = new Proyecto(req.body);
+        await nuevoProyecto.save();
+        res.status(201).json({ message: 'Proyecto creado exitosamente' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 
 // Obtener todos los proyectos y convocatorias
 router.get('/',verificarToken, async (req, res) => {

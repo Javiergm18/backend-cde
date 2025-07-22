@@ -12,6 +12,8 @@ const programaRadialSchema = new mongoose.Schema({
     nombreEmpresa: String, // Si aplica
     telefonoContacto: String,
     correoElectronico: String,
+    evidenciasFotograficas: [String],
+    evidenciasDocumentos: [String],
     generacionDatosEstadisticos: Object // Para análisis y reportes
 }, { collection: 'ProgramaRadial' });
 

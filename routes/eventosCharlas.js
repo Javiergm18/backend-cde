@@ -4,9 +4,11 @@ const EventoCharla = require('../models/EventosCharlas');
 const verificarToken = require('../middleware/authMiddleware');
 
 // Crear un nuevo evento o charla
+/*
 router.post('/', verificarToken, async (req, res) => {
     try {
         // Prefijar base64 si no lo tiene
+        
         if (req.body.evidenciasFotograficas && Array.isArray(req.body.evidenciasFotograficas)) {
             req.body.evidenciasFotograficas = req.body.evidenciasFotograficas.map(media => {
                 // Asegura que sea un objeto con los campos esperados
@@ -33,6 +35,36 @@ router.post('/', verificarToken, async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+*/
+
+router.post('/', verificarToken, async (req, res) => {
+    try {
+        // Procesar evidencias fotográficas
+        if (req.body.evidenciasFotograficas && Array.isArray(req.body.evidenciasFotograficas)) {
+            req.body.evidenciasFotograficas = req.body.evidenciasFotograficas.map(item => {
+                return item.startsWith('data:image') || item.startsWith('data:video')
+                    ? item
+                    : 'data:image/png;base64,' + item;
+            });
+        }
+
+        // Procesar evidencias documentales (PDF, DOC, etc.)
+        if (req.body.evidenciasDocumentos && Array.isArray(req.body.evidenciasDocumentos)) {
+            req.body.evidenciasDocumentos = req.body.evidenciasDocumentos.map(item => {
+                return item.startsWith('data:application')
+                    ? item
+                    : 'data:application/pdf;base64,' + item;
+            });
+        }
+
+        const nuevoEventoCharla = new EventoCharla(req.body);
+        await nuevoEventoCharla.save();
+        res.status(201).json({ message: 'Evento o charla creada exitosamente' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 
 
 

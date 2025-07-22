@@ -18,6 +18,7 @@ const proyectoSchema = new mongoose.Schema({
         correo: String,
         telefono: String
     },
+    evidenciasFotograficas: [String],  
     evidenciasDocumentos: [String], // Enlaces a documentos clave
     generacionDatosEstadisticos: Object // Para análisis y reportes
 }, { collection: 'Proyectos' });

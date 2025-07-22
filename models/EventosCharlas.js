@@ -12,14 +12,16 @@ const eventoCharlaSchema = new mongoose.Schema({
     duracion: Number, // en horas
     modalidad: String, // presencial, virtual, híbrida
     observaciones: String,
-    evidenciasFotograficas: [
+    /*evidenciasFotograficas: [
     {
         nombre: String,
         tipo: String,
         contenido: String, // base64
         esVideo: String 
     }
-    ],
+    ],*/
+    evidenciasFotograficas: [String],
+    evidenciasDocumentos: [String],
     generacionDatosEstadisticos: Object // Puede contener información adicional de estadísticas
 }, { collection: 'EventosCharlas' });
 

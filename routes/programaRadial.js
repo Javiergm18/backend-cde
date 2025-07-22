@@ -4,6 +4,7 @@ const ProgramaRadial = require('../models/ProgramaRadial');
 const verificarToken = require('../middleware/authMiddleware');
 
 // Crear una nueva entrevista en el programa radial
+/*
 router.post('/',verificarToken, async (req, res) => {
     const nuevaEntrevista = new ProgramaRadial(req.body);
     try {
@@ -13,6 +14,35 @@ router.post('/',verificarToken, async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+*/
+router.post('/', verificarToken, async (req, res) => {
+    try {
+        // Procesar evidencias fotográficas (imágenes/videos en base64)
+        if (req.body.evidenciasFotograficas && Array.isArray(req.body.evidenciasFotograficas)) {
+            req.body.evidenciasFotograficas = req.body.evidenciasFotograficas.map(item => {
+                return item.startsWith('data:image') || item.startsWith('data:video')
+                    ? item
+                    : 'data:image/png;base64,' + item;
+            });
+        }
+
+        // Procesar evidencias documentales (PDF, DOC, etc. en base64)
+        if (req.body.evidenciasDocumentos && Array.isArray(req.body.evidenciasDocumentos)) {
+            req.body.evidenciasDocumentos = req.body.evidenciasDocumentos.map(item => {
+                return item.startsWith('data:application')
+                    ? item
+                    : 'data:application/pdf;base64,' + item;
+            });
+        }
+
+        const nuevaEntrevista = new ProgramaRadial(req.body);
+        await nuevaEntrevista.save();
+        res.status(201).json({ message: 'Entrevista creada exitosamente' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 
 // Obtener todas las entrevistas del programa radial
 router.get('/',verificarToken, async (req, res) => {
