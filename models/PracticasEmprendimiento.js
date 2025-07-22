@@ -18,8 +18,7 @@ const practicaEmprendimientoSchema = new mongoose.Schema({
         segundoInforme: String
     },
     observaciones: String,
-    evidenciasFotograficas: [String],
-    evidenciasDocumentos: [String], // Enlaces o nombres de archivos
+    evidencias: [String],
     generacionDatosEstadisticos: Object // Para análisis y reportes
 }, { collection: 'PracticasEmprendimiento' });
 

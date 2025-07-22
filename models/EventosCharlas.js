@@ -20,8 +20,7 @@ const eventoCharlaSchema = new mongoose.Schema({
         esVideo: String 
     }
     ],*/
-    evidenciasFotograficas: [String],
-    evidenciasDocumentos: [String],
+    evidencias: [String],
     generacionDatosEstadisticos: Object // Puede contener información adicional de estadísticas
 }, { collection: 'EventosCharlas' });
 

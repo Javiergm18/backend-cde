@@ -17,21 +17,12 @@ router.post('/',verificarToken, async (req, res) => {
 */
 router.post('/', verificarToken, async (req, res) => {
     try {
-        // Procesar evidencias fotográficas (imágenes/videos en base64)
-        if (req.body.evidenciasFotograficas && Array.isArray(req.body.evidenciasFotograficas)) {
-            req.body.evidenciasFotograficas = req.body.evidenciasFotograficas.map(item => {
-                return item.startsWith('data:image') || item.startsWith('data:video')
-                    ? item
-                    : 'data:image/png;base64,' + item;
-            });
-        }
+        if (req.body.evidencias && Array.isArray(req.body.evidencias)) {
+            req.body.evidencias = req.body.evidencias.map(item => {
+                if (item.startsWith('data:')) return item;
 
-        // Procesar evidencias documentales (PDF, DOC, etc. en base64)
-        if (req.body.evidenciasDocumentos && Array.isArray(req.body.evidenciasDocumentos)) {
-            req.body.evidenciasDocumentos = req.body.evidenciasDocumentos.map(item => {
-                return item.startsWith('data:application')
-                    ? item
-                    : 'data:application/pdf;base64,' + item;
+                // Por defecto, suponer imagen PNG
+                return 'data:image/png;base64,' + item;
             });
         }
 

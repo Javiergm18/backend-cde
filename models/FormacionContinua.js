@@ -19,8 +19,7 @@ const formacionContinuaSchema = new mongoose.Schema({
     materialesRecursosNecesarios: [String],
     costo: Number, // si aplica
     observaciones: String,
-    evidenciasFotograficas: [String],
-    evidenciasDocumentos: [String], // enlaces o nombres de archivos
+    evidencias: [String],
     generacionDatosEstadisticos: Object // Para análisis y reportes
 }, { collection: 'FormacionContinua' });
 
