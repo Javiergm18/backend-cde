@@ -18,7 +18,12 @@ const proyectoSchema = new mongoose.Schema({
         correo: String,
         telefono: String
     },
-    evidencias: [String],
+    evidencias: [{
+        contenido: String,   // Base64 con prefijo data:...;base64,...
+        nombre: String,      // Nombre original del archivo, ej. "foto1.png"
+        tipo: String,        // Tipo MIME, ej. "data:image/png"
+        tamaño: Number       // Tamaño en bytes (opcional pero útil)
+    }],
     generacionDatosEstadisticos: Object // Para análisis y reportes
 }, { collection: 'Proyectos' });
 

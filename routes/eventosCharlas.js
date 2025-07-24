@@ -4,48 +4,25 @@ const EventoCharla = require('../models/EventosCharlas');
 const verificarToken = require('../middleware/authMiddleware');
 
 // Crear un nuevo evento o charla
-/*
+
 router.post('/', verificarToken, async (req, res) => {
     try {
-        // Prefijar base64 si no lo tiene
-        
-        if (req.body.evidenciasFotograficas && Array.isArray(req.body.evidenciasFotograficas)) {
-            req.body.evidenciasFotograficas = req.body.evidenciasFotograficas.map(media => {
-                // Asegura que sea un objeto con los campos esperados
-                let { nombre, tipo, contenido, esVideo } = media;
+        // Procesar evidencias (imagen, video, documento) con nombre, tipo, contenido y tamaño
+        if (req.body.evidencias && Array.isArray(req.body.evidencias)) {
+            req.body.evidencias = req.body.evidencias.map(archivo => {
+                let { contenido, nombre, tipo, tamaño } = archivo;
 
                 // Agrega el prefijo si no está presente
-                if (!contenido.startsWith('data:')) {
-                    contenido = `${tipo};base64,${contenido}`;
+                if (contenido && !contenido.startsWith('data:')) {
+                    contenido = `${tipo || 'data:application/octet-stream'};base64,${contenido}`;
                 }
 
                 return {
+                    contenido: contenido || '',
                     nombre: nombre || 'archivo',
-                    tipo: tipo || 'data:image/png',
-                    contenido,
-                    esVideo: esVideo || 'false'
+                    tipo: tipo || 'data:application/octet-stream',
+                    tamaño: tamaño || 0
                 };
-            });
-        }
-
-        const nuevoEventoCharla = new EventoCharla(req.body);
-        await nuevoEventoCharla.save();
-        res.status(201).json({ message: 'Evento o charla creada exitosamente' });
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
-*/
-
-router.post('/', verificarToken, async (req, res) => {
-    try {
-        if (req.body.evidencias && Array.isArray(req.body.evidencias)) {
-            req.body.evidencias = req.body.evidencias.map(item => {
-                // Si ya tiene prefijo, lo dejamos
-                if (item.startsWith('data:')) return item;
-
-                // Por defecto, lo tratamos como imagen PNG
-                return 'data:image/png;base64,' + item;
             });
         }
 

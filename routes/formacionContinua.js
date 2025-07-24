@@ -4,26 +4,23 @@ const FormacionContinua = require('../models/FormacionContinua');
 const verificarToken = require('../middleware/authMiddleware');
 
 // Crear un nuevo curso, seminario o taller
-/*
-router.post('/',verificarToken, async (req, res) => {
-    const nuevoCurso = new FormacionContinua(req.body);
-    try {
-        await nuevoCurso.save();
-        res.status(201).json({ message: 'Curso creado exitosamente' });
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
-*/
 router.post('/', verificarToken, async (req, res) => {
     try {
         // Procesar evidencias unificadas
         if (req.body.evidencias && Array.isArray(req.body.evidencias)) {
-            req.body.evidencias = req.body.evidencias.map(item => {
-                if (item.startsWith('data:')) return item; // ya tiene prefijo
+            req.body.evidencias = req.body.evidencias.map(archivo => {
+                let { contenido, nombre, tipo, tamaño } = archivo;
 
-                // Por defecto asumir imagen PNG
-                return 'data:image/png;base64,' + item;
+                if (contenido && !contenido.startsWith('data:')) {
+                    contenido = `${tipo || 'data:application/octet-stream'};base64,${contenido}`;
+                }
+
+                return {
+                    contenido: contenido || '',
+                    nombre: nombre || 'archivo',
+                    tipo: tipo || 'data:application/octet-stream',
+                    tamaño: tamaño || 0
+                };
             });
         }
 

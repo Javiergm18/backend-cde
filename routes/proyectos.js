@@ -4,26 +4,23 @@ const Proyecto = require('../models/Proyecto');
 const verificarToken = require('../middleware/authMiddleware');
 
 // Crear un nuevo proyecto o convocatoria
-/*
-router.post('/',verificarToken, async (req, res) => {
-    const nuevoProyecto = new Proyecto(req.body);
-    try {
-        const proyecto = await nuevoProyecto.save();
-        res.status(201).json({ message: 'Proyecto creado exitosamente'});
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
-*/
 router.post('/', verificarToken, async (req, res) => {
     try {
-        // Procesar evidencias unificadas (imágenes, videos, documentos en base64)
+        // Procesar evidencias unificadas (base64 + metadata)
         if (req.body.evidencias && Array.isArray(req.body.evidencias)) {
-            req.body.evidencias = req.body.evidencias.map(item => {
-                if (item.startsWith('data:')) return item;
+            req.body.evidencias = req.body.evidencias.map(archivo => {
+                let { contenido, nombre, tipo, tamaño } = archivo;
 
-                // Por defecto, se asume imagen PNG si no se especifica tipo MIME
-                return 'data:image/png;base64,' + item;
+                if (contenido && !contenido.startsWith('data:')) {
+                    contenido = `${tipo || 'data:application/octet-stream'};base64,${contenido}`;
+                }
+
+                return {
+                    contenido: contenido || '',
+                    nombre: nombre || 'archivo',
+                    tipo: tipo || 'data:application/octet-stream',
+                    tamaño: tamaño || 0
+                };
             });
         }
 
@@ -34,6 +31,7 @@ router.post('/', verificarToken, async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 
 

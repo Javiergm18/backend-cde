@@ -4,25 +4,22 @@ const PracticasEmprendimiento = require('../models/PracticasEmprendimiento');
 const verificarToken = require('../middleware/authMiddleware');
 
 // Crear una nueva práctica de emprendimiento
-/*
-router.post('/',verificarToken, async (req, res) => {
-    const nuevaPractica = new PracticasEmprendimiento(req.body);
-    try {
-        await nuevaPractica.save();
-        res.status(201).json({ message: 'Práctica de emprendimiento creada exitosamente' });
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
-*/
 router.post('/', verificarToken, async (req, res) => {
     try {
         if (req.body.evidencias && Array.isArray(req.body.evidencias)) {
-            req.body.evidencias = req.body.evidencias.map(item => {
-                if (item.startsWith('data:')) return item;
+            req.body.evidencias = req.body.evidencias.map(archivo => {
+                let { contenido, nombre, tipo, tamaño } = archivo;
 
-                // Por defecto suponer imagen PNG si no se especifica
-                return 'data:image/png;base64,' + item;
+                if (contenido && !contenido.startsWith('data:')) {
+                    contenido = `${tipo || 'data:application/octet-stream'};base64,${contenido}`;
+                }
+
+                return {
+                    contenido: contenido || '',
+                    nombre: nombre || 'archivo',
+                    tipo: tipo || 'data:application/octet-stream',
+                    tamaño: tamaño || 0
+                };
             });
         }
 
@@ -33,6 +30,7 @@ router.post('/', verificarToken, async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 
 
