@@ -93,4 +93,32 @@ router.delete('/:id',verificarToken, async (req, res) => {
     }
 });
 
+// Eliminar evidencia de un evento o charla por id
+router.delete('/:id/evidencias/:nombre', verificarToken, async (req, res) => {
+    const { id, nombre } = req.params;
+
+    try {
+        // Buscar el evento por ID
+        const evento = await EventoCharla.findById(id);
+        if (!evento) return res.status(404).json({ message: 'Evento no encontrado' });
+
+        // Filtrar la evidencia por nombre
+        const evidenciasFiltradas = evento.evidencias.filter(e => e.nombre !== nombre);
+
+        // Verificar si alguna evidencia fue eliminada
+        if (evidenciasFiltradas.length === evento.evidencias.length) {
+            return res.status(404).json({ message: 'Evidencia no encontrada' });
+        }
+
+        // Reemplazar y guardar
+        evento.evidencias = evidenciasFiltradas;
+        await evento.save();
+
+        res.status(200).json({ message: 'Evidencia eliminada exitosamente' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
 module.exports = router;

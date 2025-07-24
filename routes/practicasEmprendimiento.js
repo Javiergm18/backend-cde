@@ -88,4 +88,20 @@ router.delete('/:id',verificarToken, async (req, res) => {
     }
 });
 
+// Eliminar una evidencia específica de una práctica de emprendimiento
+router.delete('/:id/evidencias/:nombre', verificarToken, async (req, res) => {
+    try {
+        const practica = await PracticasEmprendimiento.findById(req.params.id);
+        if (!practica) return res.status(404).json({ message: 'Práctica no encontrada' });
+
+        // Filtrar las evidencias quitando la que coincide por nombre
+        practica.evidencias = practica.evidencias.filter(e => e.nombre !== req.params.nombre);
+
+        await practica.save();
+        res.status(200).json({ message: 'Evidencia eliminada de la práctica de emprendimiento' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 module.exports = router;
