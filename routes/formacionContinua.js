@@ -93,19 +93,30 @@ router.delete('/:id',verificarToken, async (req, res) => {
 // Eliminar una evidencia específica de un curso, seminario o taller
 router.delete('/:id/evidencias/:nombre', verificarToken, async (req, res) => {
     try {
-        const curso = await FormacionContinua.findById(req.params.id);
+        const { id, nombre } = req.params;
+
+        // Decodificar el nombre por si contiene caracteres especiales
+        const nombreDecodificado = decodeURIComponent(nombre);
+
+        const curso = await FormacionContinua.findById(id);
         if (!curso) return res.status(404).json({ message: 'Curso no encontrado' });
 
-        // Filtrar las evidencias quitando la que coincide por nombre
-        const evidenciasFiltradas = curso.evidencias.filter(e => e.nombre !== req.params.nombre);
-        curso.evidencias = evidenciasFiltradas;
+        const evidenciaIndex = curso.evidencias.findIndex(e => e.nombre === nombreDecodificado);
+        if (evidenciaIndex === -1) {
+            return res.status(404).json({ message: 'Evidencia no encontrada' });
+        }
 
+        // Eliminar la evidencia
+        curso.evidencias.splice(evidenciaIndex, 1);
         await curso.save();
-        res.status(200).json({ message: 'Evidencia eliminada del curso' });
+
+        res.status(200).json({ message: 'Evidencia eliminada del curso exitosamente' });
+
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 
 module.exports = router;

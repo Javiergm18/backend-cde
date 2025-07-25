@@ -90,14 +90,23 @@ router.delete('/:id',verificarToken, async (req, res) => {
 // Eliminar una evidencia específica de una entrevista radial
 router.delete('/:id/evidencias/:nombre', verificarToken, async (req, res) => {
     try {
-        const entrevista = await ProgramaRadial.findById(req.params.id);
+        const { id, nombre } = req.params;
+        const nombreDecodificado = decodeURIComponent(nombre);
+
+        const entrevista = await ProgramaRadial.findById(id);
         if (!entrevista) return res.status(404).json({ message: 'Entrevista no encontrada' });
 
-        // Filtrar las evidencias quitando la que coincida por nombre
-        entrevista.evidencias = entrevista.evidencias.filter(e => e.nombre !== req.params.nombre);
+        const evidenciaIndex = entrevista.evidencias.findIndex(e => e.nombre === nombreDecodificado);
+        if (evidenciaIndex === -1) {
+            return res.status(404).json({ message: 'Evidencia no encontrada' });
+        }
 
+        // Eliminar la evidencia
+        entrevista.evidencias.splice(evidenciaIndex, 1);
         await entrevista.save();
-        res.status(200).json({ message: 'Evidencia eliminada de la entrevista radial' });
+
+        res.status(200).json({ message: 'Evidencia eliminada de la entrevista radial exitosamente' });
+
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

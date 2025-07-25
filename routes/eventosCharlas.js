@@ -93,29 +93,31 @@ router.delete('/:id',verificarToken, async (req, res) => {
     }
 });
 
-// Eliminar evidencia de un evento o charla por id
-router.delete('/:id/evidencias/:nombre', verificarToken, async (req, res) => {
-    const { id, nombre } = req.params;
-
+router.delete('/:id/evidencias/:nombreEvidencia', verificarToken, async (req, res) => {
     try {
-        // Buscar el documento por ID
-        const evento = await EventoCharla.findById(id);
-        if (!evento) return res.status(404).json({ message: 'Evento no encontrado' });
+        const { id, nombreEvidencia } = req.params;
 
-        // Buscar si existe la evidencia con ese nombre
-        const evidenciaIndex = evento.evidencias.findIndex(ev => ev.nombre === nombre);
+        // Decodificar el nombre por si viene con caracteres especiales
+        const nombreDecodificado = decodeURIComponent(nombreEvidencia);
+
+        const evento = await EventoCharla.findById(id);
+        if (!evento) return res.status(404).json({ message: 'Evento o charla no encontrada' });
+
+        const evidenciaIndex = evento.evidencias.findIndex(e => e.nombre === nombreDecodificado);
         if (evidenciaIndex === -1) {
             return res.status(404).json({ message: 'Evidencia no encontrada' });
         }
 
-        // Eliminar del array
+        // Eliminar la evidencia
         evento.evidencias.splice(evidenciaIndex, 1);
         await evento.save();
 
         res.status(200).json({ message: 'Evidencia eliminada exitosamente' });
+
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 module.exports = router;

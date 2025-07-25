@@ -92,17 +92,26 @@ router.delete('/:id',verificarToken, async (req, res) => {
 // Eliminar una evidencia específica de un proyecto o convocatoria
 router.delete('/:id/evidencias/:nombre', verificarToken, async (req, res) => {
     try {
-        const proyecto = await Proyecto.findById(req.params.id);
+        const { id, nombre } = req.params;
+        const nombreDecodificado = decodeURIComponent(nombre);
+
+        const proyecto = await Proyecto.findById(id);
         if (!proyecto) return res.status(404).json({ message: 'Proyecto no encontrado' });
 
-        // Filtrar las evidencias, eliminando la que coincida por nombre
-        proyecto.evidencias = proyecto.evidencias.filter(e => e.nombre !== req.params.nombre);
+        const evidenciaIndex = proyecto.evidencias.findIndex(e => e.nombre === nombreDecodificado);
+        if (evidenciaIndex === -1) {
+            return res.status(404).json({ message: 'Evidencia no encontrada' });
+        }
 
+        proyecto.evidencias.splice(evidenciaIndex, 1);
         await proyecto.save();
-        res.status(200).json({ message: 'Evidencia eliminada del proyecto' });
+
+        res.status(200).json({ message: 'Evidencia eliminada del proyecto exitosamente' });
+
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 module.exports = router;
