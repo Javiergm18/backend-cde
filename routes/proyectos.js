@@ -68,15 +68,35 @@ router.get('/buscar/:nombreProyecto',verificarToken, async (req, res) => {
 });
 
 // Actualizar un proyecto o convocatoria
-router.put('/:id',verificarToken, async (req, res) => {
+router.put('/:id', verificarToken, async (req, res) => {
     try {
+        // Procesar evidencias si vienen en la petición
+        if (req.body.evidencias && Array.isArray(req.body.evidencias)) {
+            req.body.evidencias = req.body.evidencias.map(archivo => {
+                let { contenido, nombre, tipo, tamaño } = archivo;
+
+                if (contenido && !contenido.startsWith('data:')) {
+                    contenido = `${tipo || 'data:application/octet-stream'};base64,${contenido}`;
+                }
+
+                return {
+                    contenido: contenido || '',
+                    nombre: nombre || 'archivo',
+                    tipo: tipo || 'data:application/octet-stream',
+                    tamaño: tamaño || 0
+                };
+            });
+        }
+
         const proyecto = await Proyecto.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!proyecto) return res.status(404).json({ message: 'Proyecto no encontrado para actualizar' });
-        res.status(200).json({ message: 'Proyecto actualizado exitosamente'});
+
+        res.status(200).json({ message: 'Proyecto actualizado exitosamente' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 // Eliminar un proyecto o convocatoria
 router.delete('/:id',verificarToken, async (req, res) => {

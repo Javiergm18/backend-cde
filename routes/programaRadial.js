@@ -66,15 +66,35 @@ router.get('/buscar/:nombreEntrevistado',verificarToken, async (req, res) => {
 });
 
 // Actualizar una entrevista del programa radial
-router.put('/:id',verificarToken, async (req, res) => {
+router.put('/:id', verificarToken, async (req, res) => {
     try {
+        // Procesar evidencias si vienen en la petición
+        if (req.body.evidencias && Array.isArray(req.body.evidencias)) {
+            req.body.evidencias = req.body.evidencias.map(archivo => {
+                let { contenido, nombre, tipo, tamaño } = archivo;
+
+                if (contenido && !contenido.startsWith('data:')) {
+                    contenido = `${tipo || 'data:application/octet-stream'};base64,${contenido}`;
+                }
+
+                return {
+                    contenido: contenido || '',
+                    nombre: nombre || 'archivo',
+                    tipo: tipo || 'data:application/octet-stream',
+                    tamaño: tamaño || 0
+                };
+            });
+        }
+
         const entrevista = await ProgramaRadial.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!entrevista) return res.status(404).json({ message: 'Entrevista no encontrada' });
+
         res.status(200).json({ message: 'Entrevista actualizada exitosamente' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 // Eliminar una entrevista del programa radial
 router.delete('/:id',verificarToken, async (req, res) => {

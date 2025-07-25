@@ -69,10 +69,29 @@ router.get('/buscar/:nombreCurso',verificarToken, async (req, res) => {
 });
 
 // Actualizar un curso, seminario o taller
-router.put('/:id',verificarToken, async (req, res) => {
+router.put('/:id', verificarToken, async (req, res) => {
     try {
+        // Procesar evidencias antes de actualizar
+        if (req.body.evidencias && Array.isArray(req.body.evidencias)) {
+            req.body.evidencias = req.body.evidencias.map(archivo => {
+                let { contenido, nombre, tipo, tamaño } = archivo;
+
+                if (contenido && !contenido.startsWith('data:')) {
+                    contenido = `${tipo || 'data:application/octet-stream'};base64,${contenido}`;
+                }
+
+                return {
+                    contenido: contenido || '',
+                    nombre: nombre || 'archivo',
+                    tipo: tipo || 'data:application/octet-stream',
+                    tamaño: tamaño || 0
+                };
+            });
+        }
+
         const curso = await FormacionContinua.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!curso) return res.status(404).json({ message: 'Curso no encontrado' });
+
         res.status(200).json({ message: 'Curso actualizado exitosamente' });
     } catch (err) {
         res.status(500).json({ message: err.message });
