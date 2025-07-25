@@ -72,15 +72,35 @@ router.get('/buscar/:tema',verificarToken, async (req, res) => {
 
 
 // Actualizar un evento o charla
-router.put('/:id',verificarToken, async (req, res) => {
+router.put('/:id', verificarToken, async (req, res) => {
     try {
+        // Procesar evidencias antes de actualizar
+        if (req.body.evidencias && Array.isArray(req.body.evidencias)) {
+            req.body.evidencias = req.body.evidencias.map(archivo => {
+                let { contenido, nombre, tipo, tamaño } = archivo;
+
+                if (contenido && !contenido.startsWith('data:')) {
+                    contenido = `${tipo || 'data:application/octet-stream'};base64,${contenido}`;
+                }
+
+                return {
+                    contenido: contenido || '',
+                    nombre: nombre || 'archivo',
+                    tipo: tipo || 'data:application/octet-stream',
+                    tamaño: tamaño || 0
+                };
+            });
+        }
+
         const eventoCharla = await EventoCharla.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!eventoCharla) return res.status(404).json({ message: 'Evento o charla no encontrada' });
+
         res.status(200).json({ message: 'Evento o charla actualizada exitosamente' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 // Eliminar un evento o charla
 router.delete('/:id',verificarToken, async (req, res) => {
