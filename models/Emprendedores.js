@@ -13,19 +13,24 @@ const emprendedorSchema = new mongoose.Schema({
     municipio: String,
     telefono: String,
     correoElectronico: String,
-    modalidadAtencion: String,
-    responsableAsesoria: String,
-    programa: String,
-    semestre: String,
-    fuenteRemision: String,
+    nombreEmpresa: String,
+    sector: String,
+    actividadEconomica: String,
     clasificacionSBDC: String,
-    clasificacionSuperSociedades: String,
-    seguimientoAsesorias: [Number],
-    fechaInicioAsesoria: {
-        año: Number,
-        semestre: String,
-        mes: String
-    }
+    superSociedades: String,
+    fechaInicioAsesoria: Date,   
+    remitido: String,
+    areaIntervenir: String,
+    brechaCerrar: String,
+
+    evidencias: [
+        {
+            contenido: String,  
+            nombre: String,     
+            tipo: String,      
+            tamaño: Number      
+        }
+    ]
 }, { collection: 'Emprendedores' });
 
 module.exports = mongoose.model('Emprendedor', emprendedorSchema);
