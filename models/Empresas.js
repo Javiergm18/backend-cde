@@ -11,6 +11,7 @@ const empresaSchema = new mongoose.Schema({
     situacionVulnerabilidad: String,
     direccion: String,
     municipio: String,
+    departamento: String,
     telefono: String,
     correoElectronico: String,
     nombreEmpresa: String,
