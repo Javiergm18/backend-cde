@@ -21,8 +21,8 @@ const emprendedorSchema = new mongoose.Schema({
     superSociedades: String,
     fechaInicioAsesoria: Date,   
     remitido: String,
-    areaIntervenir: String,
-    brechaCerrar: String,
+    areaIntervenir: [String],
+    brechaCerrar: [String],
 
     evidencias: [
         {
