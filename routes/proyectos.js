@@ -45,6 +45,18 @@ router.get('/',verificarToken, async (req, res) => {
     }
 });
 
+router.get('/buscar/:nombreProyecto',verificarToken, async (req, res) => {
+    try {
+        const proyecto = await Proyecto.find({
+            nombreProyecto: { $regex: req.params.nombreProyecto, $options: 'i' }
+        });
+        res.status(200).json(proyecto);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
 // Obtener un proyecto o convocatoria por ID
 router.get('/:id',verificarToken, async (req, res) => {
     try {
@@ -56,16 +68,6 @@ router.get('/:id',verificarToken, async (req, res) => {
     }
 });
 
-router.get('/buscar/:nombreProyecto',verificarToken, async (req, res) => {
-    try {
-        const proyecto = await Proyecto.find({
-            nombreProyecto: { $regex: req.params.nombreProyecto, $options: 'i' }
-        });
-        res.status(200).json(proyecto);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
 
 // Actualizar un proyecto o convocatoria
 router.put('/:id', verificarToken, async (req, res) => {

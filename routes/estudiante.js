@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const Emprendedor = require('../models/Emprendedores');
+const Estudiante = require('../models/Estudiantes');
 const verificarToken = require('../middleware/authMiddleware');
 
-// Crear un nuevo emprendedor
+// Crear un nuevo estudiante
 router.post('/', verificarToken, async (req, res) => {
     try {
         // Procesar evidencias (imagen, video, documento) con nombre, tipo, contenido y tamaño
@@ -25,52 +25,55 @@ router.post('/', verificarToken, async (req, res) => {
             });
         }
 
+        // Crear el estudiante con todos los datos del body
+        const nuevoEstudiante = new Estudiante(req.body);
+        await nuevoEstudiante.save();
 
-        const nuevoEmprendedor = new Emprendedor(req.body);
-        await nuevoEmprendedor.save();
-
-        res.status(201).json({ message: 'Emprendedor creado exitosamente' });
+        res.status(201).json({ message: 'Estudiante creado exitosamente' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
 
-// Obtener todos los emprendedores
-router.get('/',verificarToken, async (req, res) => {
+
+// Obtener todos los estudiantes
+router.get('/', verificarToken, async (req, res) => {
     try {
-        const emprendedores = await Emprendedor.find();
-        res.status(200).json(emprendedores);
+        const estudiantes = await Estudiante.find();
+        res.status(200).json(estudiantes);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
 
-// Buscar emprendedores por nombre
-router.get('/buscar/:nombres',verificarToken, async (req, res) => {
+// Buscar estudiantes por nombre
+router.get('/buscar/:nombres', verificarToken, async (req, res) => {
     try {
-        const emprendedor = await Emprendedor.find({
+        const estudiantes = await Estudiante.find({
             nombres: { $regex: req.params.nombres, $options: 'i' }
         });
-        res.status(200).json(emprendedor);
+        res.status(200).json(estudiantes);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
 
-// Obtener un emprendedor por ID
-router.get('/:id',verificarToken, async (req, res) => {
+
+// Obtener un estudiante por ID
+router.get('/:id', verificarToken, async (req, res) => {
     try {
-        const emprendedor = await Emprendedor.findById(req.params.id);
-        if (!emprendedor) return res.status(404).json({ message: 'Emprendedor no encontrado' });
-        res.status(200).json(emprendedor);
+        const estudiante = await Estudiante.findById(req.params.id);
+        if (!estudiante) return res.status(404).json({ message: 'Estudiante no encontrado' });
+        res.status(200).json(estudiante);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
 
-// Actualizar un emprendedor
+// Actualizar un estudiante
 router.put('/:id', verificarToken, async (req, res) => {
     try {
+        // Procesar evidencias antes de actualizar
         if (req.body.evidencias && Array.isArray(req.body.evidencias)) {
             req.body.evidencias = req.body.evidencias.map(archivo => {
                 let { contenido, nombre, tipo, tamaño } = archivo;
@@ -88,50 +91,48 @@ router.put('/:id', verificarToken, async (req, res) => {
             });
         }
 
-        const emprendedor = await Emprendedor.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (!emprendedor) return res.status(404).json({ message: 'Emprendedor no encontrado' });
+        const estudiante = await Estudiante.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!estudiante) return res.status(404).json({ message: 'Estudiante no encontrado' });
 
-        res.status(200).json({ message: 'Emprendedor actualizado exitosamente' });
+        res.status(200).json({ message: 'Estudiante actualizado exitosamente' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
 
-// Eliminar un emprendedor
+// Eliminar un estudiante
 router.delete('/:id', verificarToken, async (req, res) => {
     try {
-        const emprendedor = await Emprendedor.findByIdAndDelete(req.params.id);
-        if (!emprendedor) return res.status(404).json({ message: 'Emprendedor no encontrado' });
-        res.status(200).json({ message: 'Emprendedor eliminado' });
+        const estudiante = await Estudiante.findByIdAndDelete(req.params.id);
+        if (!estudiante) return res.status(404).json({ message: 'Estudiante no encontrado' });
+        res.status(200).json({ message: 'Estudiante eliminado' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
 
-// Eliminar evidencia de un emprendedor
+// Eliminar evidencia de un estudiante
 router.delete('/:id/evidencias/:nombreEvidencia', verificarToken, async (req, res) => {
     try {
         const { id, nombreEvidencia } = req.params;
         const nombreDecodificado = decodeURIComponent(nombreEvidencia);
 
-        const emprendedor = await Emprendedor.findById(id);
-        if (!emprendedor) return res.status(404).json({ message: 'Emprendedor no encontrado' });
+        const estudiante = await Estudiante.findById(id);
+        if (!estudiante) return res.status(404).json({ message: 'Estudiante no encontrado' });
 
-        const evidenciaIndex = emprendedor.evidencias.findIndex(e => e.nombre === nombreDecodificado);
+        const evidenciaIndex = estudiante.evidencias.findIndex(e => e.nombre === nombreDecodificado);
         if (evidenciaIndex === -1) {
             return res.status(404).json({ message: 'Evidencia no encontrada' });
         }
 
-        emprendedor.evidencias.splice(evidenciaIndex, 1);
-        await emprendedor.save();
+        estudiante.evidencias.splice(evidenciaIndex, 1);
+        await estudiante.save();
 
         res.status(200).json({ message: 'Evidencia eliminada exitosamente' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
-
-
 
 
 

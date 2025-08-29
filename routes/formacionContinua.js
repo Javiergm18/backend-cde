@@ -45,17 +45,6 @@ router.get('/',verificarToken, async (req, res) => {
     }
 });
 
-// Obtener un curso, seminario o taller por ID
-router.get('/:id',verificarToken, async (req, res) => {
-    try {
-        const curso = await FormacionContinua.findById(req.params.id);
-        if (!curso) return res.status(404).json({ message: 'Curso no encontrado' });
-        res.status(200).json(curso);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
-
 // Buscar emprendedores por nombreCurso
 router.get('/buscar/:nombreCurso',verificarToken, async (req, res) => {
     try {
@@ -67,6 +56,19 @@ router.get('/buscar/:nombreCurso',verificarToken, async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
+// Obtener un curso, seminario o taller por ID
+router.get('/:id',verificarToken, async (req, res) => {
+    try {
+        const curso = await FormacionContinua.findById(req.params.id);
+        if (!curso) return res.status(404).json({ message: 'Curso no encontrado' });
+        res.status(200).json(curso);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
 
 // Actualizar un curso, seminario o taller
 router.put('/:id', verificarToken, async (req, res) => {

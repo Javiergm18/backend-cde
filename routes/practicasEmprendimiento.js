@@ -44,6 +44,17 @@ router.get('/',verificarToken, async (req, res) => {
     }
 });
 
+router.get('/buscar/:nombreEstudiante',verificarToken, async (req, res) => {
+    try {
+        const practica = await PracticasEmprendimiento.find({
+            nombreEstudiante: { $regex: req.params.nombreEstudiante, $options: 'i' }
+        });
+        res.status(200).json(practica);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Obtener una práctica de emprendimiento por ID
 router.get('/:id',verificarToken, async (req, res) => {
     try {
@@ -55,16 +66,7 @@ router.get('/:id',verificarToken, async (req, res) => {
     }
 });
 
-router.get('/buscar/:nombreEstudiante',verificarToken, async (req, res) => {
-    try {
-        const practica = await PracticasEmprendimiento.find({
-            nombreEstudiante: { $regex: req.params.nombreEstudiante, $options: 'i' }
-        });
-        res.status(200).json(practica);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
+
 
 // Actualizar una práctica de emprendimiento
 router.put('/:id', verificarToken, async (req, res) => {

@@ -47,17 +47,6 @@ router.get('/',verificarToken, async (req, res) => {
     }
 });
 
-// Obtener un evento o charla por ID
-router.get('/:id',verificarToken, async (req, res) => {
-    try {
-        const eventoCharla = await EventoCharla.findById(req.params.id);
-        if (!eventoCharla) return res.status(404).json({ message: 'Evento o charla no encontrada' });
-        res.status(200).json(eventoCharla);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
-
 // Buscar emprendedores por tema
 router.get('/buscar/:tema',verificarToken, async (req, res) => {
     try {
@@ -69,6 +58,19 @@ router.get('/buscar/:tema',verificarToken, async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
+// Obtener un evento o charla por ID
+router.get('/:id',verificarToken, async (req, res) => {
+    try {
+        const eventoCharla = await EventoCharla.findById(req.params.id);
+        if (!eventoCharla) return res.status(404).json({ message: 'Evento o charla no encontrada' });
+        res.status(200).json(eventoCharla);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
 
 
 // Actualizar un evento o charla
