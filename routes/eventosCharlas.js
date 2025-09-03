@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const EventoCharla = require('../models/EventosCharlas');
 const verificarToken = require('../middleware/authMiddleware');
+const multer = require('multer');
+const xlsx = require('xlsx');
 
 // Crear un nuevo evento o charla
 
@@ -34,7 +36,54 @@ router.post('/', verificarToken, async (req, res) => {
     }
 });
 
+// ==================== Carga masiva desde Excel ====================
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
+router.post('/upload/excel', verificarToken, upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No se ha subido ningún archivo' });
+        }
+
+        // Leer archivo Excel desde buffer
+        const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0]; // Primera hoja
+        const worksheet = workbook.Sheets[sheetName];
+
+        // Convertir hoja a JSON
+        const data = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
+
+        // Mapear filas a la estructura del modelo
+        const eventos = data.map(row => ({
+            entidadOrganizadora: row["Entidad Organizadora"] || "",
+            fechaEvento: row["Fecha Evento"] ? new Date(row["Fecha Evento"]) : null,
+            tipoActividad: row["Tipo Actividad"] || "",
+            tema: row["Tema"] || "",
+            nombreConferencista: row["Nombre Conferencista"] || "",
+            publicoObjetivo: row["Público Objetivo"] || "",
+            numeroAsistentes: row["Número Asistentes"] ? Number(row["Número Asistentes"]) : 0,
+            horaInicio: row["Hora Inicio"] || "",
+            duracion: row["Duración (horas)"] ? Number(row["Duración (horas)"]) : 0,
+            modalidad: row["Modalidad"] || "",
+            observaciones: row["Observaciones"] || "",
+            evidencias: [],
+            generacionDatosEstadisticos: {}
+        }));
+
+        // Insertar en MongoDB
+        await EventoCharla.insertMany(eventos);
+
+        res.status(200).json({
+            message: "Eventos cargados exitosamente",
+            total: eventos.length
+        });
+
+    } catch (error) {
+        console.error("Error al procesar el archivo:", error);
+        res.status(500).json({ message: "Error al procesar el archivo", error });
+    }
+});
 
 
 // Obtener todos los eventos y charlas
