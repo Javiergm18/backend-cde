@@ -36,206 +36,68 @@ router.post('/', verificarToken, async (req, res) => {
     }
 });
 
-// ==================== Carga masiva desde Excel (robusta) ====================
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-const normalize = (v) => {
-  if (v === null || v === undefined) return '';
-  return String(v)
-    .replace(/\r/g, '')
-    .replace(/\n/g, ' ')
-    .replace(/\u00A0/g, ' ') // nbsp
-    .replace(/\./g, '')      // quitar puntos
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-};
-
-const parseExcelDate = (val) => {
-  if (val === null || val === undefined || val === '') return null;
-
-  // Si viene como número (serial Excel)
-  if (typeof val === 'number') {
-    const d = xlsx.SSF.parse_date_code(val);
-    if (d) return new Date(d.y, d.m - 1, d.d);
-  }
-
-  // Si viene como Date válido
-  if (val instanceof Date && !isNaN(val)) return val;
-
-  // Si es string → intentar varios formatos
-  const s = String(val).trim().replace(/\./g, '/').replace(/-/g, '/');
-
-  // Intentar parse directo
-  const d1 = new Date(s);
-  if (!isNaN(d1.getTime())) return d1;
-
-  // Intentar dd/mm/yyyy
-  const m = s.match(/(\d{1,2})[\/](\d{1,2})[\/](\d{2,4})/);
-  if (m) {
-    let day = parseInt(m[1], 10),
-        month = parseInt(m[2], 10),
-        year = parseInt(m[3], 10);
-    if (year < 100) year += 2000;
-    return new Date(year, month - 1, day);
-  }
-
-  return null;
-};
-
+// ==================== Carga masiva con plantilla oficial ====================
 router.post('/upload/excel', verificarToken, upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ message: 'No se subió ningún archivo' });
+    if (!req.file) {
+      return res.status(400).json({ message: 'No se subió ningún archivo' });
+    }
 
+    // Leer el Excel
     const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
 
-    // 1) Leer como matriz para detectar mejor dónde está la fila de encabezados
-    const rows = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+    // Convertir a JSON directamente (usa encabezados de la primera fila)
+    const rows = xlsx.utils.sheet_to_json(sheet, { defval: '' });
 
-    const expectedTokens = ['entidad', 'fecha', 'tema', 'charla', 'taller', 'público', 'publico', 'conferencista', 'asistentes', 'hora', 'horas', 'modalidad'];
+    if (rows.length === 0) {
+      return res.status(400).json({ message: 'El archivo Excel está vacío' });
+    }
 
-    let headerRowIndex = -1;
-    const maxSearchRows = Math.min(40, rows.length);
-    for (let i = 0; i < maxSearchRows; i++) {
-      const r = rows[i].map(cell => normalize(cell));
-      let matches = 0;
-      for (const cell of r) {
-        for (const tok of expectedTokens) {
-          if (cell.includes(tok)) { matches++; break; }
-        }
+    // Mapear filas al modelo
+    const docs = rows.map(r => ({
+      entidadOrganizadora: String(r['Entidad organizadora'] || '').trim(),
+      fechaEvento: r['Fecha evento'] ? new Date(r['Fecha evento']) : null,
+      tipoActividad: String(r['Tipo actividad'] || '').trim(),
+      tema: String(r['Tema'] || '').trim(),
+      nombreConferencista: String(r['Nombre conferencista'] || '').trim(),
+      publicoObjetivo: String(r['Público objetivo'] || '').trim(),
+      numeroAsistentes: parseInt(r['Número asistentes'] || '0', 10),
+      horaInicio: String(r['Hora inicio'] || '').trim(),
+      duracion: parseFloat(r['Duración (horas)'] || '0'),
+      modalidad: String(r['Modalidad'] || '').trim(),
+      observaciones: String(r['Observaciones'] || '').trim(),
+      evidencias: [],
+      generacionDatosEstadisticos: {
+        fuente: 'excel',
+        hoja: sheetName
       }
-      if (matches >= 2) { headerRowIndex = i; break; }
-    }
-    if (headerRowIndex === -1) {
-      for (let i = 0; i < maxSearchRows; i++) {
-        const r = rows[i].map(cell => normalize(cell));
-        if (r.some(c => expectedTokens.some(tok => c.includes(tok)))) { headerRowIndex = i; break; }
-      }
+    }));
+
+    // Filtrar filas vacías (ej: cuando no hay fecha ni tema)
+    const validDocs = docs.filter(d => d.fechaEvento || d.tema);
+
+    if (validDocs.length === 0) {
+      return res.status(400).json({ message: 'No se encontraron filas válidas para insertar' });
     }
 
-    if (headerRowIndex === -1) {
-      return res.status(400).json({ message: 'No se pudo detectar la fila de encabezados en el Excel.' });
-    }
+    // Guardar en BD
+    await EventoCharla.insertMany(validDocs, { ordered: false });
 
-    const rawHeaders = rows[headerRowIndex].map(h => (h == null ? '' : String(h)));
-    const normalizedHeaders = rawHeaders.map(h => normalize(h));
-    const normalizedToRaw = {};
-    normalizedHeaders.forEach((nh, idx) => {
-      if (nh) normalizedToRaw[nh] = rawHeaders[idx];
+    res.status(201).json({
+      message: 'Eventos cargados exitosamente',
+      cantidad: validDocs.length
     });
-
-    console.log('Encabezados originales:', rawHeaders);
-    console.log('Encabezados normalizados:', normalizedHeaders);
-
-    const dataRows = xlsx.utils.sheet_to_json(sheet, { defval: '', range: headerRowIndex });
-    const rowsArray = Array.isArray(dataRows) ? dataRows : [dataRows];
-
-    console.log('Primeras filas leídas (raw):', rowsArray.slice(0,3));
-
-    const findRawKey = (variants) => {
-      for (const v of variants) {
-        const vn = v.toLowerCase();
-        if (normalizedToRaw[vn]) return normalizedToRaw[vn];
-        for (const nh in normalizedToRaw) {
-          if (nh.includes(vn)) return normalizedToRaw[nh];
-        }
-      }
-      return null;
-    };
-
-    const campoMap = {
-      entidadOrganizadora: ['entidad'],
-      fechaEvento: ['fecha'],
-      tipoActividad: ['charla taller', 'charla', 'taller'],
-      tema: ['tema'],
-      nombreConferencista: ['conferencista', 'nombre conferencista'],
-      publicoObjetivo: ['publico objetivo', 'publico', 'público'],
-      numeroAsistentes: ['no asistentes', 'asistentes', 'no asistentes '],
-      horaInicio: ['hora'],
-      duracion: ['no horas', 'horas', 'duracion'],
-      modalidad: ['modalidad']
-    };
-
-    const docs = [];
-    let lastEntidad = ''; // 🔑 Para arrastrar entidad en celdas combinadas
-
-    for (const rowObj of rowsArray) {
-      const getVal = (variants) => {
-        const rawKey = findRawKey(variants);
-        if (!rawKey) return '';
-        return rowObj[rawKey];
-      };
-
-      // Fecha
-      const fechaRaw = getVal(campoMap.fechaEvento);
-      const fecha = parseExcelDate(fechaRaw);
-
-      // Tema
-      const temaRaw = getVal(campoMap.tema);
-      const temaClean = (temaRaw == null ? '' : String(temaRaw).trim());
-
-      if ((!fecha) && (!temaClean || temaClean.length === 0)) continue;
-
-      // Entidad con arrastre
-      const entidadRaw = getVal(campoMap.entidadOrganizadora);
-      const entidadClean = entidadRaw && String(entidadRaw).trim() !== ''
-        ? String(entidadRaw).trim()
-        : lastEntidad;
-      if (entidadClean) lastEntidad = entidadClean;
-
-      // Numéricos
-      const asistentesRaw = getVal(campoMap.numeroAsistentes);
-      const asistentes = parseInt(String(asistentesRaw || '0').replace(/[^\d,.-]/g, '').replace(',', '.'), 10) || 0;
-
-      const durRaw = getVal(campoMap.duracion);
-      const dur = parseFloat(String(durRaw || '0').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
-
-      const doc = {
-        entidadOrganizadora: entidadClean,
-        fechaEvento: fecha,
-        tipoActividad: String(getVal(campoMap.tipoActividad) || '').trim(),
-        tema: temaClean,
-        nombreConferencista: String(getVal(campoMap.nombreConferencista) || '').trim(),
-        publicoObjetivo: String(getVal(campoMap.publicoObjetivo) || '').trim(),
-        numeroAsistentes: asistentes,
-        horaInicio: String(getVal(campoMap.horaInicio) || '').trim(),
-        duracion: dur,
-        modalidad: String(getVal(campoMap.modalidad) || '').trim(),
-        observaciones: '',
-        evidencias: [],
-        generacionDatosEstadisticos: {
-          fuente: 'excel',
-          hoja: sheetName
-        }
-      };
-
-      docs.push(doc);
-    }
-
-    console.log('Primeros documentos mapeados:', docs.slice(0,5));
-    if (docs.length === 0) {
-      return res.status(400).json({ message: 'No se encontraron filas válidas para insertar después del mapeo.' });
-    }
-
-    await EventoCharla.insertMany(docs, { ordered: false });
-
-    res.status(201).json({ message: 'Eventos cargados exitosamente', cantidad: docs.length });
 
   } catch (err) {
     console.error('Error al procesar Excel:', err);
-    if (err.message && err.message.includes('heap out of memory')) {
-      return res.status(500).json({
-        message: 'Error: memoria insuficiente al procesar el Excel. Intente archivo más pequeño o iniciar node con más memoria (--max-old-space-size).',
-        error: err.message
-      });
-    }
     res.status(500).json({ message: err.message });
   }
 });
-
 
 // Obtener todos los eventos y charlas
 router.get('/',verificarToken, async (req, res) => {
