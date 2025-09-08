@@ -33,6 +33,79 @@ router.post('/', verificarToken, async (req, res) => {
 
 
 
+// ==================== Carga masiva desde Excel - Prácticas ====================
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+const parseExcelDate = (val) => {
+  if (!val) return null;
+  if (typeof val === 'number') {
+    const d = xlsx.SSF.parse_date_code(val);
+    if (d) return new Date(d.y, d.m - 1, d.d);
+  }
+  if (val instanceof Date && !isNaN(val)) return val;
+  const s = String(val).trim();
+  const d1 = new Date(s);
+  if (!isNaN(d1.getTime())) return d1;
+  const m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if (m) {
+    let day = parseInt(m[1], 10), month = parseInt(m[2], 10), year = parseInt(m[3], 10);
+    if (year < 100) year += 2000;
+    return new Date(year, month - 1, day);
+  }
+  return null;
+};
+
+router.post('/upload/excel/practicas', verificarToken, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No se subió ningún archivo' });
+
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+
+    // Convertir a JSON
+    let data = xlsx.utils.sheet_to_json(sheet, { defval: '' });
+
+    // Mapeo al modelo
+    const docs = data.map(row => ({
+      fechaSolicitud: parseExcelDate(row['Fecha de Aprobación']),
+      modalidadPractica: row['Modalidad Práctica']?.toString().trim(),
+      nombreEstudiante: row['Nombre Estudiante']?.toString().trim(),
+      idEstudiante: row['ID Estudiante']?.toString().trim(),
+      facultad: row['Facultad']?.toString().trim(),
+      nombreEmpresaIniciativa: row['Nombre Empresa/Iniciativa']?.toString().trim(),
+      nombreCoordinadorPractica: row['Nombre Coordinador Práctica']?.toString().trim(),
+      nombreDirectorPractica: row['Nombre Director Práctica']?.toString().trim(),
+      fechaInicio: parseExcelDate(row['Fecha Inicio']),
+      fechaFinalizacion: parseExcelDate(row['Fecha Finalización']),
+      fechaSustentacionSTG: parseExcelDate(row['Fecha Sustentación STG']),
+      seguimiento: {
+        arteproyecto: row['Anteproyecto']?.toString().trim(),
+        primerInforme: row['Primer Informe']?.toString().trim(),
+        segundoInforme: row['Segundo Informe']?.toString().trim()
+      },
+      observaciones: row['Observaciones']?.toString().trim(),
+      evidencias: [],
+      generacionDatosEstadisticos: {
+        fuente: 'excel',
+        hoja: sheetName
+      }
+    }));
+
+    await PracticasEmprendimiento.insertMany(docs, { ordered: false });
+
+    res.status(201).json({ message: 'Prácticas cargadas exitosamente', cantidad: docs.length });
+
+  } catch (err) {
+    console.error('Error al procesar Excel:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+
+
 
 // Obtener todas las prácticas de emprendimiento
 router.get('/',verificarToken, async (req, res) => {
