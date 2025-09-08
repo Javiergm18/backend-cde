@@ -54,7 +54,7 @@ router.post('/upload-excel', verificarToken, upload.single('file'), async (req, 
         // Convertir a JSON
         let data = xlsx.utils.sheet_to_json(sheet, { defval: '' });
 
-        // Mapeo a nuestro modelo
+        // Mapeo al modelo
         data = data.map(row => ({
             entidadOrganizadora: row['Entidad']?.toString().trim() || '',
             fechaEvento: row['Fecha'] ? new Date(row['Fecha']) : null,
