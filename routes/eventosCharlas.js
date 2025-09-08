@@ -40,7 +40,7 @@ router.post('/', verificarToken, async (req, res) => {
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-router.post('/upload-excel', verificarToken, upload.single('file'), async (req, res) => {
+router.post('/upload/excel', verificarToken, upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: 'No se subió ningún archivo' });
