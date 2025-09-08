@@ -40,50 +40,47 @@ router.post('/', verificarToken, async (req, res) => {
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-router.post('/upload/excel', verificarToken, upload.single('file'), async (req, res) => {
+router.post('/upload-excel', verificarToken, upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
-            return res.status(400).json({ message: 'No se ha subido ningún archivo' });
+            return res.status(400).json({ message: 'No se subió ningún archivo' });
         }
 
-        // Leer archivo Excel desde buffer
+        // Leer el archivo Excel desde el buffer
         const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-        const sheetName = workbook.SheetNames[0]; // Primera hoja
-        const worksheet = workbook.Sheets[sheetName];
+        const sheetName = workbook.SheetNames[0]; // Solo la primera hoja
+        const sheet = workbook.Sheets[sheetName];
 
-        // Convertir hoja a JSON
-        const data = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
+        // Convertir a JSON
+        let data = xlsx.utils.sheet_to_json(sheet, { defval: '' });
 
-        // Mapear filas a la estructura del modelo
-        const eventos = data.map(row => ({
-            entidadOrganizadora: row["Entidad Organizadora"] || "",
-            fechaEvento: row["Fecha Evento"] ? new Date(row["Fecha Evento"]) : null,
-            tipoActividad: row["Tipo Actividad"] || "",
-            tema: row["Tema"] || "",
-            nombreConferencista: row["Nombre Conferencista"] || "",
-            publicoObjetivo: row["Público Objetivo"] || "",
-            numeroAsistentes: row["Número Asistentes"] ? Number(row["Número Asistentes"]) : 0,
-            horaInicio: row["Hora Inicio"] || "",
-            duracion: row["Duración (horas)"] ? Number(row["Duración (horas)"]) : 0,
-            modalidad: row["Modalidad"] || "",
-            observaciones: row["Observaciones"] || "",
-            evidencias: [],
-            generacionDatosEstadisticos: {}
+        // Mapeo a nuestro modelo
+        data = data.map(row => ({
+            entidadOrganizadora: row['Entidad']?.toString().trim() || '',
+            fechaEvento: row['Fecha'] ? new Date(row['Fecha']) : null,
+            tipoActividad: row['Charla Taller'] || row['Charla\nTaller'] || '',
+            tema: row['Tema']?.toString().trim() || '',
+            nombreConferencista: row['Conferencista']?.toString().trim() || '',
+            publicoObjetivo: row['Público']?.toString().trim() || '',
+            numeroAsistentes: parseInt(row['No. Asistentes ']?.toString().trim() || '0', 10),
+            horaInicio: row['Hora']?.toString().trim() || '',
+            duracion: parseFloat(row['No. Horas']?.toString().trim() || '0'),
+            modalidad: row['Modalidad']?.toString().trim() || '',
+            observaciones: '',
+            evidencias: []
         }));
 
-        // Insertar en MongoDB
-        await EventoCharla.insertMany(eventos);
+        // Insertar todos en MongoDB
+        await EventoCharla.insertMany(data);
 
-        res.status(200).json({
-            message: "Eventos cargados exitosamente",
-            total: eventos.length
-        });
-
-    } catch (error) {
-        console.error("Error al procesar el archivo:", error);
-        res.status(500).json({ message: "Error al procesar el archivo", error });
+        res.status(201).json({ message: 'Eventos cargados exitosamente', cantidad: data.length });
+    } catch (err) {
+        console.error('Error al procesar Excel:', err);
+        res.status(500).json({ message: err.message });
     }
 });
+
+module.exports = router;
 
 
 // Obtener todos los eventos y charlas
