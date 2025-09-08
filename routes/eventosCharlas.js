@@ -54,23 +54,33 @@ const normalize = (v) => {
 
 const parseExcelDate = (val) => {
   if (val === null || val === undefined || val === '') return null;
+
   // Si viene como número (serial Excel)
   if (typeof val === 'number') {
     const d = xlsx.SSF.parse_date_code(val);
     if (d) return new Date(d.y, d.m - 1, d.d);
   }
+
   // Si viene como Date válido
   if (val instanceof Date && !isNaN(val)) return val;
-  // Si es string, probar Date() o dd/mm/yyyy
-  const s = String(val).trim();
+
+  // Si es string → intentar varios formatos
+  const s = String(val).trim().replace(/\./g, '/').replace(/-/g, '/');
+
+  // Intentar parse directo
   const d1 = new Date(s);
   if (!isNaN(d1.getTime())) return d1;
-  const m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+
+  // Intentar dd/mm/yyyy
+  const m = s.match(/(\d{1,2})[\/](\d{1,2})[\/](\d{2,4})/);
   if (m) {
-    let day = parseInt(m[1], 10), month = parseInt(m[2], 10), year = parseInt(m[3], 10);
+    let day = parseInt(m[1], 10),
+        month = parseInt(m[2], 10),
+        year = parseInt(m[3], 10);
     if (year < 100) year += 2000;
     return new Date(year, month - 1, day);
   }
+
   return null;
 };
 
@@ -85,7 +95,6 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
     // 1) Leer como matriz para detectar mejor dónde está la fila de encabezados
     const rows = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
-    // Tokens que esperamos encontrar en la fila de encabezados
     const expectedTokens = ['entidad', 'fecha', 'tema', 'charla', 'taller', 'público', 'publico', 'conferencista', 'asistentes', 'hora', 'horas', 'modalidad'];
 
     let headerRowIndex = -1;
@@ -98,9 +107,8 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
           if (cell.includes(tok)) { matches++; break; }
         }
       }
-      if (matches >= 2) { headerRowIndex = i; break; } // >=2 tokens sugiere que es la fila correcta
+      if (matches >= 2) { headerRowIndex = i; break; }
     }
-    // fallback: buscar al menos 1 token si no encontró con >=2
     if (headerRowIndex === -1) {
       for (let i = 0; i < maxSearchRows; i++) {
         const r = rows[i].map(cell => normalize(cell));
@@ -112,10 +120,8 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
       return res.status(400).json({ message: 'No se pudo detectar la fila de encabezados en el Excel.' });
     }
 
-    // Cabeceras originales y normalizadas
     const rawHeaders = rows[headerRowIndex].map(h => (h == null ? '' : String(h)));
     const normalizedHeaders = rawHeaders.map(h => normalize(h));
-    // Mapa: normalizedHeader -> rawHeader
     const normalizedToRaw = {};
     normalizedHeaders.forEach((nh, idx) => {
       if (nh) normalizedToRaw[nh] = rawHeaders[idx];
@@ -124,21 +130,15 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
     console.log('Encabezados originales:', rawHeaders);
     console.log('Encabezados normalizados:', normalizedHeaders);
 
-    // 2) Ahora convertir la hoja a JSON empezando en la fila de encabezados detectada
     const dataRows = xlsx.utils.sheet_to_json(sheet, { defval: '', range: headerRowIndex });
-
-    // Si dataRows es un objeto (cuando hay solo una fila) lo convierte a array
     const rowsArray = Array.isArray(dataRows) ? dataRows : [dataRows];
 
     console.log('Primeras filas leídas (raw):', rowsArray.slice(0,3));
 
-    // Helper para encontrar la clave original desde un conjunto de variantes
     const findRawKey = (variants) => {
       for (const v of variants) {
         const vn = v.toLowerCase();
-        // búsqueda exacta normalizada
         if (normalizedToRaw[vn]) return normalizedToRaw[vn];
-        // búsqueda por inclusión parcial
         for (const nh in normalizedToRaw) {
           if (nh.includes(vn)) return normalizedToRaw[nh];
         }
@@ -146,7 +146,6 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
       return null;
     };
 
-    // Definimos variantes para cada campo del modelo
     const campoMap = {
       entidadOrganizadora: ['entidad'],
       fechaEvento: ['fecha'],
@@ -161,24 +160,33 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
     };
 
     const docs = [];
+    let lastEntidad = ''; // 🔑 Para arrastrar entidad en celdas combinadas
 
     for (const rowObj of rowsArray) {
-      // construir doc consultando las claves detectadas
       const getVal = (variants) => {
         const rawKey = findRawKey(variants);
         if (!rawKey) return '';
         return rowObj[rawKey];
       };
 
+      // Fecha
       const fechaRaw = getVal(campoMap.fechaEvento);
       const fecha = parseExcelDate(fechaRaw);
 
+      // Tema
       const temaRaw = getVal(campoMap.tema);
       const temaClean = (temaRaw == null ? '' : String(temaRaw).trim());
 
-      // Omitir filas vacías: requerimos al menos tema o fecha
       if ((!fecha) && (!temaClean || temaClean.length === 0)) continue;
 
+      // Entidad con arrastre
+      const entidadRaw = getVal(campoMap.entidadOrganizadora);
+      const entidadClean = entidadRaw && String(entidadRaw).trim() !== ''
+        ? String(entidadRaw).trim()
+        : lastEntidad;
+      if (entidadClean) lastEntidad = entidadClean;
+
+      // Numéricos
       const asistentesRaw = getVal(campoMap.numeroAsistentes);
       const asistentes = parseInt(String(asistentesRaw || '0').replace(/[^\d,.-]/g, '').replace(',', '.'), 10) || 0;
 
@@ -186,7 +194,7 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
       const dur = parseFloat(String(durRaw || '0').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
 
       const doc = {
-        entidadOrganizadora: String(getVal(campoMap.entidadOrganizadora) || '').trim(),
+        entidadOrganizadora: entidadClean,
         fechaEvento: fecha,
         tipoActividad: String(getVal(campoMap.tipoActividad) || '').trim(),
         tema: temaClean,
@@ -212,14 +220,12 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
       return res.status(400).json({ message: 'No se encontraron filas válidas para insertar después del mapeo.' });
     }
 
-    // Insertar en BD
     await EventoCharla.insertMany(docs, { ordered: false });
 
     res.status(201).json({ message: 'Eventos cargados exitosamente', cantidad: docs.length });
 
   } catch (err) {
     console.error('Error al procesar Excel:', err);
-    // Si falla por memoria, sugerimos aumentar heap
     if (err.message && err.message.includes('heap out of memory')) {
       return res.status(500).json({
         message: 'Error: memoria insuficiente al procesar el Excel. Intente archivo más pequeño o iniciar node con más memoria (--max-old-space-size).',
