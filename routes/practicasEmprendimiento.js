@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const PracticasEmprendimiento = require('../models/PracticasEmprendimiento');
 const verificarToken = require('../middleware/authMiddleware');
+const multer = require('multer');
+const xlsx = require('xlsx');
+
 
 // Crear una nueva práctica de emprendimiento
 router.post('/', verificarToken, async (req, res) => {

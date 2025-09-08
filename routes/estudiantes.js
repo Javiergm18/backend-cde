@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Estudiante = require('../models/Estudiantes');
 const verificarToken = require('../middleware/authMiddleware');
+const multer = require('multer');
+const xlsx = require('xlsx');
+
 
 // Crear un nuevo estudiante
 router.post('/', verificarToken, async (req, res) => {

@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Emprendedor = require('../models/Emprendedores');
 const verificarToken = require('../middleware/authMiddleware');
+const multer = require('multer');
+const xlsx = require('xlsx');
+
 
 // Crear un nuevo emprendedor
 router.post('/', verificarToken, async (req, res) => {

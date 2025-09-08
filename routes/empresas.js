@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Empresa = require('../models/Empresas');
 const verificarToken = require('../middleware/authMiddleware');
+const multer = require('multer');
+const xlsx = require('xlsx');
+
 
 // Crear una nueva empresa
 router.post('/', verificarToken, async (req, res) => {
