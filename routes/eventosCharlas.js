@@ -36,77 +36,200 @@ router.post('/', verificarToken, async (req, res) => {
     }
 });
 
-// ==================== Carga masiva desde Excel ====================
+// ==================== Carga masiva desde Excel (robusta) ====================
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
+
+const normalize = (v) => {
+  if (v === null || v === undefined) return '';
+  return String(v)
+    .replace(/\r/g, '')
+    .replace(/\n/g, ' ')
+    .replace(/\u00A0/g, ' ') // nbsp
+    .replace(/\./g, '')      // quitar puntos
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+};
+
+const parseExcelDate = (val) => {
+  if (val === null || val === undefined || val === '') return null;
+  // Si viene como número (serial Excel)
+  if (typeof val === 'number') {
+    const d = xlsx.SSF.parse_date_code(val);
+    if (d) return new Date(d.y, d.m - 1, d.d);
+  }
+  // Si viene como Date válido
+  if (val instanceof Date && !isNaN(val)) return val;
+  // Si es string, probar Date() o dd/mm/yyyy
+  const s = String(val).trim();
+  const d1 = new Date(s);
+  if (!isNaN(d1.getTime())) return d1;
+  const m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if (m) {
+    let day = parseInt(m[1], 10), month = parseInt(m[2], 10), year = parseInt(m[3], 10);
+    if (year < 100) year += 2000;
+    return new Date(year, month - 1, day);
+  }
+  return null;
+};
 
 router.post('/upload/excel', verificarToken, upload.single('file'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'No se subió ningún archivo' });
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No se subió ningún archivo' });
+
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+
+    // 1) Leer como matriz para detectar mejor dónde está la fila de encabezados
+    const rows = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+    // Tokens que esperamos encontrar en la fila de encabezados
+    const expectedTokens = ['entidad', 'fecha', 'tema', 'charla', 'taller', 'público', 'publico', 'conferencista', 'asistentes', 'hora', 'horas', 'modalidad'];
+
+    let headerRowIndex = -1;
+    const maxSearchRows = Math.min(40, rows.length);
+    for (let i = 0; i < maxSearchRows; i++) {
+      const r = rows[i].map(cell => normalize(cell));
+      let matches = 0;
+      for (const cell of r) {
+        for (const tok of expectedTokens) {
+          if (cell.includes(tok)) { matches++; break; }
         }
-
-        // Leer el archivo Excel desde el buffer
-        const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-        const sheetName = workbook.SheetNames[0]; 
-        const sheet = workbook.Sheets[sheetName];
-
-        // Convertir a JSON como array para limpiar encabezados
-        let data = xlsx.utils.sheet_to_json(sheet, {
-            defval: '',
-            header: 1 // modo matriz
-        });
-
-        // La primera fila son los encabezados originales
-        const rawHeaders = data[0];
-        const headers = rawHeaders.map(h =>
-            h.toString()
-             .replace(/\n/g, ' ')   // quitar saltos de línea
-             .replace(/\./g, '')    // quitar puntos
-             .trim()
-        );
-
-        console.log("Encabezados originales:", rawHeaders);
-        console.log("Encabezados normalizados:", headers);
-
-        // Reconstruir JSON con encabezados limpios
-        data = data.slice(1).map(row => {
-            let obj = {};
-            headers.forEach((h, i) => {
-                obj[h] = row[i] || '';
-            });
-            return obj;
-        });
-
-        console.log("Primeras filas normalizadas:", data.slice(0, 3));
-
-        // Mapeo al modelo
-        const mappedData = data.map(row => ({
-            entidadOrganizadora: row['Entidad'] || '',
-            fechaEvento: row['Fecha'] ? new Date(row['Fecha']) : null,
-            tipoActividad: row['Charla Taller'] || '',
-            tema: row['Tema'] || '',
-            nombreConferencista: row['Conferencista'] || '',
-            publicoObjetivo: row['Público'] || '',
-            numeroAsistentes: parseInt(row['No Asistentes'] || '0', 10),
-            horaInicio: row['Hora'] || '',
-            duracion: parseFloat(row['No Horas'] || '0'),
-            modalidad: row['Modalidad'] || '',
-            observaciones: '',
-            evidencias: []
-        }));
-
-        // Insertar todos en MongoDB
-        await EventoCharla.insertMany(mappedData);
-
-        res.status(201).json({ message: 'Eventos cargados exitosamente', cantidad: mappedData.length });
-    } catch (err) {
-        console.error('Error al procesar Excel:', err);
-        res.status(500).json({ message: err.message });
+      }
+      if (matches >= 2) { headerRowIndex = i; break; } // >=2 tokens sugiere que es la fila correcta
     }
+    // fallback: buscar al menos 1 token si no encontró con >=2
+    if (headerRowIndex === -1) {
+      for (let i = 0; i < maxSearchRows; i++) {
+        const r = rows[i].map(cell => normalize(cell));
+        if (r.some(c => expectedTokens.some(tok => c.includes(tok)))) { headerRowIndex = i; break; }
+      }
+    }
+
+    if (headerRowIndex === -1) {
+      return res.status(400).json({ message: 'No se pudo detectar la fila de encabezados en el Excel.' });
+    }
+
+    // Cabeceras originales y normalizadas
+    const rawHeaders = rows[headerRowIndex].map(h => (h == null ? '' : String(h)));
+    const normalizedHeaders = rawHeaders.map(h => normalize(h));
+    // Mapa: normalizedHeader -> rawHeader
+    const normalizedToRaw = {};
+    normalizedHeaders.forEach((nh, idx) => {
+      if (nh) normalizedToRaw[nh] = rawHeaders[idx];
+    });
+
+    console.log('Encabezados originales:', rawHeaders);
+    console.log('Encabezados normalizados:', normalizedHeaders);
+
+    // 2) Ahora convertir la hoja a JSON empezando en la fila de encabezados detectada
+    const dataRows = xlsx.utils.sheet_to_json(sheet, { defval: '', range: headerRowIndex });
+
+    // Si dataRows es un objeto (cuando hay solo una fila) lo convierte a array
+    const rowsArray = Array.isArray(dataRows) ? dataRows : [dataRows];
+
+    console.log('Primeras filas leídas (raw):', rowsArray.slice(0,3));
+
+    // Helper para encontrar la clave original desde un conjunto de variantes
+    const findRawKey = (variants) => {
+      for (const v of variants) {
+        const vn = v.toLowerCase();
+        // búsqueda exacta normalizada
+        if (normalizedToRaw[vn]) return normalizedToRaw[vn];
+        // búsqueda por inclusión parcial
+        for (const nh in normalizedToRaw) {
+          if (nh.includes(vn)) return normalizedToRaw[nh];
+        }
+      }
+      return null;
+    };
+
+    // Definimos variantes para cada campo del modelo
+    const campoMap = {
+      entidadOrganizadora: ['entidad'],
+      fechaEvento: ['fecha'],
+      tipoActividad: ['charla taller', 'charla', 'taller'],
+      tema: ['tema'],
+      nombreConferencista: ['conferencista', 'nombre conferencista'],
+      publicoObjetivo: ['publico objetivo', 'publico', 'público'],
+      numeroAsistentes: ['no asistentes', 'asistentes', 'no asistentes '],
+      horaInicio: ['hora'],
+      duracion: ['no horas', 'horas', 'duracion'],
+      modalidad: ['modalidad']
+    };
+
+    const docs = [];
+
+    for (const rowObj of rowsArray) {
+      // construir doc consultando las claves detectadas
+      const getVal = (variants) => {
+        const rawKey = findRawKey(variants);
+        if (!rawKey) return '';
+        return rowObj[rawKey];
+      };
+
+      const fechaRaw = getVal(campoMap.fechaEvento);
+      const fecha = parseExcelDate(fechaRaw);
+
+      const temaRaw = getVal(campoMap.tema);
+      const temaClean = (temaRaw == null ? '' : String(temaRaw).trim());
+
+      // Omitir filas vacías: requerimos al menos tema o fecha
+      if ((!fecha) && (!temaClean || temaClean.length === 0)) continue;
+
+      const asistentesRaw = getVal(campoMap.numeroAsistentes);
+      const asistentes = parseInt(String(asistentesRaw || '0').replace(/[^\d,.-]/g, '').replace(',', '.'), 10) || 0;
+
+      const durRaw = getVal(campoMap.duracion);
+      const dur = parseFloat(String(durRaw || '0').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+
+      const doc = {
+        entidadOrganizadora: String(getVal(campoMap.entidadOrganizadora) || '').trim(),
+        fechaEvento: fecha,
+        tipoActividad: String(getVal(campoMap.tipoActividad) || '').trim(),
+        tema: temaClean,
+        nombreConferencista: String(getVal(campoMap.nombreConferencista) || '').trim(),
+        publicoObjetivo: String(getVal(campoMap.publicoObjetivo) || '').trim(),
+        numeroAsistentes: asistentes,
+        horaInicio: String(getVal(campoMap.horaInicio) || '').trim(),
+        duracion: dur,
+        modalidad: String(getVal(campoMap.modalidad) || '').trim(),
+        observaciones: '',
+        evidencias: [],
+        generacionDatosEstadisticos: {
+          fuente: 'excel',
+          hoja: sheetName
+        }
+      };
+
+      docs.push(doc);
+    }
+
+    console.log('Primeros documentos mapeados:', docs.slice(0,5));
+    if (docs.length === 0) {
+      return res.status(400).json({ message: 'No se encontraron filas válidas para insertar después del mapeo.' });
+    }
+
+    // Insertar en BD
+    await EventoCharla.insertMany(docs, { ordered: false });
+
+    res.status(201).json({ message: 'Eventos cargados exitosamente', cantidad: docs.length });
+
+  } catch (err) {
+    console.error('Error al procesar Excel:', err);
+    // Si falla por memoria, sugerimos aumentar heap
+    if (err.message && err.message.includes('heap out of memory')) {
+      return res.status(500).json({
+        message: 'Error: memoria insuficiente al procesar el Excel. Intente archivo más pequeño o iniciar node con más memoria (--max-old-space-size).',
+        error: err.message
+      });
+    }
+    res.status(500).json({ message: err.message });
+  }
 });
 
-module.exports = router;
 
 // Obtener todos los eventos y charlas
 router.get('/',verificarToken, async (req, res) => {
