@@ -48,32 +48,58 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
 
         // Leer el archivo Excel desde el buffer
         const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-        const sheetName = workbook.SheetNames[0]; // Solo la primera hoja
+        const sheetName = workbook.SheetNames[0]; 
         const sheet = workbook.Sheets[sheetName];
 
-        // Convertir a JSON
-        let data = xlsx.utils.sheet_to_json(sheet, { defval: '' });
+        // Convertir a JSON como array para limpiar encabezados
+        let data = xlsx.utils.sheet_to_json(sheet, {
+            defval: '',
+            header: 1 // modo matriz
+        });
+
+        // La primera fila son los encabezados originales
+        const rawHeaders = data[0];
+        const headers = rawHeaders.map(h =>
+            h.toString()
+             .replace(/\n/g, ' ')   // quitar saltos de línea
+             .replace(/\./g, '')    // quitar puntos
+             .trim()
+        );
+
+        console.log("Encabezados originales:", rawHeaders);
+        console.log("Encabezados normalizados:", headers);
+
+        // Reconstruir JSON con encabezados limpios
+        data = data.slice(1).map(row => {
+            let obj = {};
+            headers.forEach((h, i) => {
+                obj[h] = row[i] || '';
+            });
+            return obj;
+        });
+
+        console.log("Primeras filas normalizadas:", data.slice(0, 3));
 
         // Mapeo al modelo
-        data = data.map(row => ({
-            entidadOrganizadora: row['Entidad']?.toString().trim() || '',
+        const mappedData = data.map(row => ({
+            entidadOrganizadora: row['Entidad'] || '',
             fechaEvento: row['Fecha'] ? new Date(row['Fecha']) : null,
-            tipoActividad: row['Charla Taller'] || row['Charla\nTaller'] || '',
-            tema: row['Tema']?.toString().trim() || '',
-            nombreConferencista: row['Conferencista']?.toString().trim() || '',
-            publicoObjetivo: row['Público']?.toString().trim() || '',
-            numeroAsistentes: parseInt(row['No. Asistentes ']?.toString().trim() || '0', 10),
-            horaInicio: row['Hora']?.toString().trim() || '',
-            duracion: parseFloat(row['No. Horas']?.toString().trim() || '0'),
-            modalidad: row['Modalidad']?.toString().trim() || '',
+            tipoActividad: row['Charla Taller'] || '',
+            tema: row['Tema'] || '',
+            nombreConferencista: row['Conferencista'] || '',
+            publicoObjetivo: row['Público'] || '',
+            numeroAsistentes: parseInt(row['No Asistentes'] || '0', 10),
+            horaInicio: row['Hora'] || '',
+            duracion: parseFloat(row['No Horas'] || '0'),
+            modalidad: row['Modalidad'] || '',
             observaciones: '',
             evidencias: []
         }));
 
         // Insertar todos en MongoDB
-        await EventoCharla.insertMany(data);
+        await EventoCharla.insertMany(mappedData);
 
-        res.status(201).json({ message: 'Eventos cargados exitosamente', cantidad: data.length });
+        res.status(201).json({ message: 'Eventos cargados exitosamente', cantidad: mappedData.length });
     } catch (err) {
         console.error('Error al procesar Excel:', err);
         res.status(500).json({ message: err.message });
@@ -81,7 +107,6 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
 });
 
 module.exports = router;
-
 
 // Obtener todos los eventos y charlas
 router.get('/',verificarToken, async (req, res) => {
