@@ -24,7 +24,7 @@ const empresaSchema = new mongoose.Schema({
     fechaInicioAsesoria: Date,
     remitido: String,
 
-    fechaNacimiento: String, // pregunta 3
+    fechaNacimiento: Date, // pregunta 3
     estadoCivil: String, // pregunta 6
     ultimoNivelAcademico: String, // pregunta 7
     rolInstitucionEntidad: String, // pregunta 8
