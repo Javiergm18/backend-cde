@@ -1,22 +1,22 @@
 const mongoose = require('mongoose');
 
 const emprendedorSchema = new mongoose.Schema({
-    tipoDocumento: String,
-    numeroDocumento: String,
-    nombres: String,
+    tipoDocumento: String, //pregunta 1
+    numeroDocumento: String, // pregunta 2
+    nombres: String, 
     apellidos: String,
     genero: String,
-    edad: Number,
-    nivelEducativo: String,
+    edad: Number, // pregunta 4
+    nivelEducativo: String, // pregunta 7
     situacionVulnerabilidad: String,
-    direccion: String,
+    direccion: String, // pregunta 5 
     municipio: String,
     departamento: String,
     telefono: String,
     correoElectronico: String,
-    nombreEmpresa: String,
-    sector: String,
-    actividadEconomica: String,
+    nombreEmpresa: String, // pregunta 10
+    sector: String, // pregunta 12
+    actividadEconomica: String,  // pregunta 13
     clasificacionSBDC: String,
     superSociedades: String,
     fechaInicioAsesoria: Date,   
@@ -24,12 +24,13 @@ const emprendedorSchema = new mongoose.Schema({
 
     fechaNacimiento: Date, // pregunta 3
     estadoCivil: String, // pregunta 6
-    ultimoNivelAcademico: String, // pregunta 7
     rolInstitucionEntidad: String, // pregunta 8
-    nombreEmprendimiento: String, // pregunta 10
+        // si es estudiante
+    semestre: String, //pregunta 9
+    año: Number,
+    carrera: String,
+
     anoIncioEmprendimiento: String, // pregunta 11
-    tipoEmprendimiento: String, // pregunta 12
-    productosEmprendimiento: String, // pregunta 13
     motivoEmprendimiento: String, // pregunta 14
     personalEmprendimiento: String, // pregunta 15
     ubicacionEmprendimiento: String, // pregunta 16
@@ -40,8 +41,6 @@ const emprendedorSchema = new mongoose.Schema({
     apoyoEmprendimiento: String, // pregunta 21
     disponibilidadEmprendimiento: String, // pregunta 22
     accesibilidadEmprendimiento: String, // pregunta 23
-
-
     areaIntervenir: [String],
     brechaCerrar: [String],
 

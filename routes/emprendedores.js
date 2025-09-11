@@ -42,7 +42,7 @@ router.post('/', verificarToken, async (req, res) => {
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Reutilizamos el parser de fechas
+
 const parseExcelDate = (val) => {
   if (!val) return null;
   if (typeof val === 'number') {
