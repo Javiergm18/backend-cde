@@ -42,7 +42,7 @@ router.post('/', verificarToken, async (req, res) => {
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-
+// Función para parsear fechas desde Excel
 const parseExcelDate = (val) => {
   if (!val) return null;
   if (typeof val === 'number') {
@@ -62,6 +62,7 @@ const parseExcelDate = (val) => {
   return null;
 };
 
+// ==================== Carga masiva desde Excel - Emprendedores ====================
 router.post('/upload/excel', verificarToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No se subió ningún archivo' });
@@ -73,34 +74,47 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
     // Convertir a JSON
     let data = xlsx.utils.sheet_to_json(sheet, { defval: '' });
 
-    // Mapeo al modelo Emprendedor
+    // Mapeo al modelo
     const docs = data.map(row => ({
       tipoDocumento: row['Tipo Documento']?.toString().trim(),
       numeroDocumento: row['Número Documento']?.toString().trim(),
       nombres: row['Nombres']?.toString().trim(),
       apellidos: row['Apellidos']?.toString().trim(),
       genero: row['Género']?.toString().trim(),
-      edad: Number(row['Edad']) || null,
-      nivelEducativo: row['Nivel Educativo']?.toString().trim(),
-      situacionVulnerabilidad: row['Situación Vulnerabilidad']?.toString().trim(),
+      edad: parseInt(row['Edad'] || '0', 10),
+      fechaNacimiento: parseExcelDate(row['Fecha Nacimiento']),
+      estadoCivil: row['Estado Civil']?.toString().trim(),
       direccion: row['Dirección']?.toString().trim(),
       municipio: row['Municipio']?.toString().trim(),
       departamento: row['Departamento']?.toString().trim(),
       telefono: row['Teléfono']?.toString().trim(),
       correoElectronico: row['Correo Electrónico']?.toString().trim(),
+      nivelEducativo: row['Nivel Educativo']?.toString().trim(),
+      situacionVulnerabilidad: row['Situación Vulnerabilidad']?.toString().trim(),
+      rolInstitucionEntidad: row['Rol Institución/Entidad']?.toString().trim(),
+      semestre: row['Semestre']?.toString().trim(),
+      año: parseInt(row['Año'] || '0', 10),
+      carrera: row['Carrera']?.toString().trim(),
       nombreEmpresa: row['Nombre Empresa']?.toString().trim(),
+      anoIncioEmprendimiento: row['Año Inicio Emprendimiento']?.toString().trim(),
       sector: row['Sector']?.toString().trim(),
       actividadEconomica: row['Actividad Económica']?.toString().trim(),
       clasificacionSBDC: row['Clasificación SBDC']?.toString().trim(),
       superSociedades: row['SuperSociedades']?.toString().trim(),
       fechaInicioAsesoria: parseExcelDate(row['Fecha Inicio Asesoría']),
       remitido: row['Remitido']?.toString().trim(),
-      areaIntervenir: row['Área a Intervenir'] 
-        ? row['Área a Intervenir'].split(',').map(v => v.trim()) 
-        : [],
-      brechaCerrar: row['Brecha a Cerrar'] 
-        ? row['Brecha a Cerrar'].split(',').map(v => v.trim()) 
-        : [],
+      motivoEmprendimiento: row['Motivo Emprendimiento']?.toString().trim(),
+      personalEmprendimiento: row['Personal Emprendimiento']?.toString().trim(),
+      ubicacionEmprendimiento: row['Ubicación Emprendimiento']?.toString().trim(),
+      nivelFormalEmprendimiento: row['Nivel Formal Emprendimiento']?.toString().trim(),
+      cursosCapacitaciones: row['Cursos Capacitaciones']?.toString().trim(),
+      retosEmprendimiento: row['Retos Emprendimiento']?.toString().trim(),
+      canalesDeVenta: row['Canales de Venta']?.toString().trim(),
+      apoyoEmprendimiento: row['Apoyo Emprendimiento']?.toString().trim(),
+      disponibilidadEmprendimiento: row['Disponibilidad Emprendimiento']?.toString().trim(),
+      accesibilidadEmprendimiento: row['Accesibilidad Emprendimiento']?.toString().trim(),
+      areaIntervenir: row['Área Intervenir'] ? row['Área Intervenir'].split(',').map(s => s.trim()) : [],
+      brechaCerrar: row['Brecha Cerrar'] ? row['Brecha Cerrar'].split(',').map(s => s.trim()) : [],
       evidencias: [],
     }));
 
@@ -109,11 +123,10 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
     res.status(201).json({ message: 'Emprendedores cargados exitosamente', cantidad: docs.length });
 
   } catch (err) {
-    console.error('Error al procesar Excel (Emprendedores):', err);
+    console.error('Error al procesar Excel:', err);
     res.status(500).json({ message: err.message });
   }
 });
-
 
 
 // Obtener todos los emprendedores

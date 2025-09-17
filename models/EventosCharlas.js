@@ -22,3 +22,6 @@ const eventoCharlaSchema = new mongoose.Schema({
 }, { collection: 'EventosCharlas' });
 
 module.exports = mongoose.model('EventoCharla', eventoCharlaSchema);
+
+
+//eventos es conocido en el frontend como capacitaciones debido a cambios de ultimo momento

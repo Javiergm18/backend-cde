@@ -1,3 +1,6 @@
+
+//eventos es conocido en el frontend como capacitaciones debido a cambios de ultimo momento
+
 const express = require('express');
 const router = express.Router();
 const EventoCharla = require('../models/EventosCharlas');
