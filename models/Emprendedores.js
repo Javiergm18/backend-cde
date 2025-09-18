@@ -15,8 +15,8 @@ const emprendedorSchema = new mongoose.Schema({
     telefono: String,
     correoElectronico: String,
     nombreEmpresa: String, // pregunta 10
-    sector: String, // pregunta 12
-    actividadEconomica: String,  // pregunta 13
+    sector: String, 
+    actividadEconomica: String,  
     clasificacionSBDC: String,
     superSociedades: String,
     fechaInicioAsesoria: Date,   
@@ -31,6 +31,8 @@ const emprendedorSchema = new mongoose.Schema({
     carrera: String,
 
     anoIncioEmprendimiento: String, // pregunta 11
+    tipoEmprendimiento: String,// pregunta 12
+    productosEmprendimiento: String,  // pregunta 13
     motivoEmprendimiento: String, // pregunta 14
     personalEmprendimiento: String, // pregunta 15
     ubicacionEmprendimiento: String, // pregunta 16
