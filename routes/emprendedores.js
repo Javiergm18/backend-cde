@@ -42,7 +42,6 @@ router.post('/', verificarToken, async (req, res) => {
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Función para parsear fechas desde Excel
 const parseExcelDate = (val) => {
   if (!val) return null;
   if (typeof val === 'number') {
@@ -62,19 +61,19 @@ const parseExcelDate = (val) => {
   return null;
 };
 
-// ==================== Carga masiva desde Excel - Emprendedores ====================
 router.post('/upload/excel', verificarToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No se subió ningún archivo' });
 
     const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
+    const sheetName = 'Emprendedores'; // <-- solo esta hoja
     const sheet = workbook.Sheets[sheetName];
+    if (!sheet) {
+      return res.status(400).json({ message: 'No se encontró la hoja Emprendedores en el archivo.' });
+    }
 
-    // Convertir a JSON
     let data = xlsx.utils.sheet_to_json(sheet, { defval: '' });
 
-    // Mapeo al modelo
     const docs = data.map(row => ({
       tipoDocumento: row['Tipo Documento']?.toString().trim(),
       numeroDocumento: row['Número Documento']?.toString().trim(),
@@ -106,7 +105,7 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
       motivoEmprendimiento: row['Motivo Emprendimiento']?.toString().trim(),
       tipoEmprendimiento: row['Tipo de Emprendimiento']?.toString().trim(),
       productosEmprendimiento: row['Productos del Emprendimiento']?.toString().trim(),
-      personalEmprendimiento: row['Personal Emprendimiento']?.toString().trim(),
+      personalEmprendimiento: parseInt(row['Personal Emprendimiento'] || '0', 10),
       ubicacionEmprendimiento: row['Ubicación Emprendimiento']?.toString().trim(),
       nivelFormalEmprendimiento: row['Nivel Formal Emprendimiento']?.toString().trim(),
       cursosCapacitaciones: row['Cursos Capacitaciones']?.toString().trim(),
