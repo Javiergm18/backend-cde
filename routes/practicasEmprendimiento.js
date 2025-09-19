@@ -59,7 +59,7 @@ const parseExcelDate = (val) => {
   return null;
 };
 
-router.post('/upload/excel/practicas', verificarToken, upload.single('file'), async (req, res) => {
+router.post('/upload/excel', verificarToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No se subió ningún archivo' });
 
