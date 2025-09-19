@@ -85,10 +85,6 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
       fechaSustentacionSTG: parseExcelDate(row['Fecha Sustentación STG']),
       observaciones: row['Observaciones']?.toString().trim(),
       evidencias: [],
-      generacionDatosEstadisticos: {
-        fuente: 'excel',
-        hoja: sheetName
-      }
     }));
 
     await PracticasEmprendimiento.insertMany(docs, { ordered: false });
