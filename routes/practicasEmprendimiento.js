@@ -36,11 +36,10 @@ router.post('/', verificarToken, async (req, res) => {
 
 
 
-// ==================== Carga masiva desde Excel - Emprendedores ====================
+// ==================== Carga masiva desde Excel - Prácticas ====================
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Reutilizamos el parser de fechas
 const parseExcelDate = (val) => {
   if (!val) return null;
   if (typeof val === 'number') {
@@ -60,7 +59,7 @@ const parseExcelDate = (val) => {
   return null;
 };
 
-router.post('/upload/excel', verificarToken, upload.single('file'), async (req, res) => {
+router.post('/upload/excel/practicas', verificarToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No se subió ningún archivo' });
 
@@ -71,47 +70,36 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
     // Convertir a JSON
     let data = xlsx.utils.sheet_to_json(sheet, { defval: '' });
 
-    // Mapeo al modelo Emprendedor
+    // Mapeo al modelo
     const docs = data.map(row => ({
-      tipoDocumento: row['Tipo Documento']?.toString().trim(),
-      numeroDocumento: row['Número Documento']?.toString().trim(),
-      nombres: row['Nombres']?.toString().trim(),
-      apellidos: row['Apellidos']?.toString().trim(),
-      genero: row['Género']?.toString().trim(),
-      edad: Number(row['Edad']) || null,
-      nivelEducativo: row['Nivel Educativo']?.toString().trim(),
-      situacionVulnerabilidad: row['Situación Vulnerabilidad']?.toString().trim(),
-      direccion: row['Dirección']?.toString().trim(),
-      municipio: row['Municipio']?.toString().trim(),
-      departamento: row['Departamento']?.toString().trim(),
-      telefono: row['Teléfono']?.toString().trim(),
-      correoElectronico: row['Correo Electrónico']?.toString().trim(),
-      nombreEmpresa: row['Nombre Empresa']?.toString().trim(),
-      sector: row['Sector']?.toString().trim(),
-      actividadEconomica: row['Actividad Económica']?.toString().trim(),
-      clasificacionSBDC: row['Clasificación SBDC']?.toString().trim(),
-      superSociedades: row['SuperSociedades']?.toString().trim(),
-      fechaInicioAsesoria: parseExcelDate(row['Fecha Inicio Asesoría']),
-      remitido: row['Remitido']?.toString().trim(),
-      areaIntervenir: row['Área a Intervenir'] 
-        ? row['Área a Intervenir'].split(',').map(v => v.trim()) 
-        : [],
-      brechaCerrar: row['Brecha a Cerrar'] 
-        ? row['Brecha a Cerrar'].split(',').map(v => v.trim()) 
-        : [],
+      fechaSolicitud: parseExcelDate(row['Fecha Solicitud']),
+      modalidadPractica: row['Modalidad Práctica']?.toString().trim(),
+      nombreEstudiante: row['Nombre Estudiante']?.toString().trim(),
+      idEstudiante: row['ID Estudiante']?.toString().trim(),
+      facultad: row['Facultad']?.toString().trim(),
+      nombreEmpresaIniciativa: row['Nombre Empresa/Iniciativa']?.toString().trim(),
+      nombreCoordinadorPractica: row['Nombre Coordinador Práctica']?.toString().trim(),
+      nombreDirectorPractica: row['Nombre Director Práctica']?.toString().trim(),
+      fechaInicio: parseExcelDate(row['Fecha Inicio']),
+      fechaFinalizacion: parseExcelDate(row['Fecha Finalización']),
+      fechaSustentacionSTG: parseExcelDate(row['Fecha Sustentación STG']),
+      observaciones: row['Observaciones']?.toString().trim(),
       evidencias: [],
+      generacionDatosEstadisticos: {
+        fuente: 'excel',
+        hoja: sheetName
+      }
     }));
 
-    await Emprendedor.insertMany(docs, { ordered: false });
+    await PracticasEmprendimiento.insertMany(docs, { ordered: false });
 
-    res.status(201).json({ message: 'Emprendedores cargados exitosamente', cantidad: docs.length });
+    res.status(201).json({ message: 'Prácticas cargadas exitosamente', cantidad: docs.length });
 
   } catch (err) {
-    console.error('Error al procesar Excel (Emprendedores):', err);
+    console.error('Error al procesar Excel:', err);
     res.status(500).json({ message: err.message });
   }
 });
-
 
 
 
