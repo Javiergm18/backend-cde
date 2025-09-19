@@ -75,10 +75,6 @@ router.post('/upload/excel', verificarToken, upload.single('file'), async (req, 
       modalidad: String(r['Modalidad'] || '').trim(),
       observaciones: String(r['Observaciones'] || '').trim(),
       evidencias: [],
-      generacionDatosEstadisticos: {
-        fuente: 'excel',
-        hoja: sheetName
-      }
     }));
 
     // Filtrar filas vacías (ej: cuando no hay fecha ni tema)

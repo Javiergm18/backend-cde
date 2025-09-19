@@ -25,7 +25,7 @@ const formacionContinuaSchema = new mongoose.Schema({
         tipo: String,        // Tipo MIME, ej. "data:image/png"
         tamaño: Number       // Tamaño en bytes (opcional pero útil)
     }],
-    generacionDatosEstadisticos: Object // Para análisis y reportes
+
 }, { collection: 'FormacionContinua' });
 
 module.exports = mongoose.model('FormacionContinua', formacionContinuaSchema);

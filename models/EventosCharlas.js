@@ -18,7 +18,7 @@ const eventoCharlaSchema = new mongoose.Schema({
         tipo: String,        // Tipo MIME, ej. "data:image/png"
         tamaño: Number       // Tamaño en bytes (opcional pero útil)
     }],
-    generacionDatosEstadisticos: Object // Puede contener información adicional de estadísticas
+
 }, { collection: 'EventosCharlas' });
 
 module.exports = mongoose.model('EventoCharla', eventoCharlaSchema);

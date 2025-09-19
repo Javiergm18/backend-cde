@@ -18,7 +18,7 @@ const programaRadialSchema = new mongoose.Schema({
         tipo: String,        // Tipo MIME, ej. "data:image/png"
         tamaño: Number       // Tamaño en bytes (opcional pero útil)
     }],
-    generacionDatosEstadisticos: Object // Para análisis y reportes
+
 }, { collection: 'ProgramaRadial' });
 
 module.exports = mongoose.model('ProgramaRadial', programaRadialSchema);
