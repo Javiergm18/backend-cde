@@ -34,7 +34,7 @@ const emprendedorSchema = new mongoose.Schema({
     tipoEmprendimiento: String,// pregunta 12
     productosEmprendimiento: String,  // pregunta 13
     motivoEmprendimiento: String, // pregunta 14
-    personalEmprendimiento: String, // pregunta 15
+    personalEmprendimiento: Number, // pregunta 15
     ubicacionEmprendimiento: String, // pregunta 16
     nivelFormalEmprendimiento: String, // pregunta 17
     cursosCapacitaciones: String, // pregunta 18
