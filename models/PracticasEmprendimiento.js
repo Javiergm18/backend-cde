@@ -24,7 +24,6 @@ const practicaEmprendimientoSchema = new mongoose.Schema({
         tipo: String,        // Tipo MIME, ej. "data:image/png"
         tamaño: Number       // Tamaño en bytes (opcional pero útil)
     }],
-    generacionDatosEstadisticos: Object // Para análisis y reportes
 }, { collection: 'PracticasEmprendimiento' });
 
 module.exports = mongoose.model('PracticasEmprendimiento', practicaEmprendimientoSchema);
