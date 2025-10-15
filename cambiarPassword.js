@@ -8,8 +8,8 @@ dotenv.config();
 async function cambiarPassword() {
   try {
     // === CONFIGURACIÓN DEL USUARIO A CAMBIAR ===
-    const correo = 'emprendimiento@upb.edu.co'; // usuario existente
-    const nuevaPassword = 'Profesional/2025*'; // nueva contraseña 
+    const correo = ''; // usuario existente
+    const nuevaPassword = ''; // nueva contraseña 
 
     // === CONECTAR A MONGODB ===
     await mongoose.connect(process.env.MONGO_URI, {
